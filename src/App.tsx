@@ -1,11 +1,13 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { useGameStore } from './store/gameStore';
 import ModeSelection from './components/ModeSelection';
 import GamePage from './pages/GamePage';
 
-function App() {
+
+function AppContent() {
   const { gameMode, gameState, setGameMode, startGame } = useGameStore();
+  const navigate = useNavigate();
   
   console.log('App render:', { gameMode, gameState });
   console.log('Current URL:', window.location.pathname);
@@ -14,43 +16,35 @@ function App() {
     console.log('Mode selected:', mode);
     setGameMode(mode);
     startGame();
+    navigate('/game');
   };
 
-  // 自动启动简单模式进行测试
-  React.useEffect(() => {
-    if (!gameMode) {
-      console.log('Auto-starting simple mode for testing');
-      handleModeSelect('simple');
-    }
-  }, []);
+
 
   return (
+    <div className="min-h-screen bg-gradient-to-b from-sky-400 to-sky-600">
+      <Routes>
+        <Route path="/" element={<ModeSelection onModeSelect={handleModeSelect} />} />
+        <Route 
+          path="/game" 
+          element={
+            gameMode ? (
+              <GamePage />
+            ) : (
+              <Navigate to="/" replace />
+            )
+          } 
+        />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </div>
+  );
+}
+
+function App() {
+  return (
     <Router>
-      <div className="min-h-screen bg-gradient-to-b from-sky-400 to-sky-600">
-        <Routes>
-          <Route 
-            path="/" 
-            element={
-              gameMode && (gameState === 'playing' || gameState === 'paused' || gameState === 'gameOver') ? (
-                <Navigate to="/game" replace />
-              ) : (
-                <ModeSelection onModeSelect={handleModeSelect} />
-              )
-            } 
-          />
-          <Route 
-            path="/game" 
-            element={
-              gameMode ? (
-                <GamePage />
-              ) : (
-                <Navigate to="/" replace />
-              )
-            } 
-          />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </div>
+      <AppContent />
     </Router>
   );
 }

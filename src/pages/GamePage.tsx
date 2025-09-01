@@ -8,7 +8,8 @@ import RevivalPopup from '../components/RevivalPopup';
 import CountdownOverlay from '../components/CountdownOverlay';
 import VictoryScreen from '../components/VictoryScreen';
 import { getGameQuestions, getQuestionById } from '../data/gameData';
-import { Pause, Play, RotateCcw, Home } from 'lucide-react';
+import { soundManager } from '../utils/soundManager';
+import { Pause, Play, Home } from 'lucide-react';
 
 const GamePage: React.FC = () => {
   const {
@@ -56,7 +57,12 @@ const GamePage: React.FC = () => {
 
 
   // 键盘控制
-  const handleKeyPress = useCallback((event: KeyboardEvent) => {
+  const handleKeyPress = useCallback(async (event: KeyboardEvent) => {
+    // 处理首次用户交互
+    if (!soundManager.getHasUserInteracted()) {
+      await soundManager.handleFirstUserInteraction();
+    }
+    
     if (event.code === 'Space' || event.code === 'ArrowUp') {
       event.preventDefault();
       if (gameState === 'playing' && !showQuestionPopup) {
@@ -73,7 +79,12 @@ const GamePage: React.FC = () => {
   }, [gameState, showQuestionPopup, showRewardPopup, showNoRewardMessage, jumpBird, pauseGame, resumeGame]);
 
   // 鼠标/触摸控制
-  const handleCanvasClick = useCallback(() => {
+  const handleCanvasClick = useCallback(async () => {
+    // 处理首次用户交互
+    if (!soundManager.getHasUserInteracted()) {
+      await soundManager.handleFirstUserInteraction();
+    }
+    
     if (gameState === 'playing' && !showQuestionPopup) {
       jumpBird();
     }
@@ -126,39 +137,6 @@ const GamePage: React.FC = () => {
             <Home className="w-4 h-4 text-white" />
             <span className="text-white text-sm font-medium">主页</span>
           </button>
-          
-          <div className="text-white">
-            <span className="text-sm opacity-80">模式: </span>
-            <span className="font-semibold">
-              {gameMode === 'simple' ? '简单' : '困难'}
-            </span>
-          </div>
-          
-          <div className="text-white">
-            <span className="text-sm opacity-80">题目: </span>
-            <span className="font-semibold">
-              第{currentQuestionIndex + 1}题/共9题
-            </span>
-          </div>
-        </div>
-
-        <div className="flex items-center space-x-6">
-          <div className="text-white text-center">
-            <div className="text-2xl font-bold">{score}</div>
-            <div className="text-xs opacity-80">分数</div>
-          </div>
-          
-          <div className="text-white text-center">
-            <div className="text-lg font-semibold">{formatTime(gameTime)}</div>
-            <div className="text-xs opacity-80">游戏时间</div>
-          </div>
-          
-          {gameState === 'playing' && !showQuestionPopup && (
-            <div className="text-white text-center">
-              <div className="text-lg font-semibold">{getNextQuestionTime()}s</div>
-              <div className="text-xs opacity-80">下次问题</div>
-            </div>
-          )}
         </div>
 
         <div className="flex items-center space-x-2">
@@ -181,14 +159,6 @@ const GamePage: React.FC = () => {
               <span className="text-white text-sm font-medium">继续</span>
             </button>
           )}
-          
-          <button
-            onClick={resetGame}
-            className="flex items-center space-x-2 px-3 py-2 bg-white bg-opacity-20 rounded-lg hover:bg-opacity-30 transition-colors"
-          >
-            <RotateCcw className="w-4 h-4 text-white" />
-            <span className="text-white text-sm font-medium">重新开始</span>
-          </button>
         </div>
       </div>
 
@@ -215,14 +185,8 @@ const GamePage: React.FC = () => {
           {gameState === 'gameOver' && (
             <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center rounded-lg">
               <div className="text-center">
-                <div className="text-white text-3xl font-bold mb-2">游戏结束</div>
-                <div className="text-white text-xl mb-4">最终分数: {score}</div>
-                <div className="text-white text-lg mb-6">游戏时间: {formatTime(gameTime)}</div>
+                <div className="text-white text-3xl font-bold mb-6">游戏结束</div>
                 <div className="space-x-4">
-                  <button
-                    onClick={resetGame}
-                    className="px-6 py-3 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition-colors"
-                  >重新开始</button>
                   <button
                     onClick={resetGame}
                     className="px-6 py-3 bg-gray-500 text-white rounded-lg font-medium hover:bg-gray-600 transition-colors"

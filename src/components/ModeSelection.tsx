@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { GameMode } from '../types/game';
+import SimpleAudioControl from './SimpleAudioControl';
 
 interface ModeSelectionProps {
   onModeSelect: (mode: GameMode) => void;
@@ -22,7 +23,11 @@ const ModeSelection: React.FC<ModeSelectionProps> = ({ onModeSelect }) => {
     setShowPrank(false);
   };
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-100 via-purple-50 to-indigo-100 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-pink-100 via-purple-50 to-indigo-100 flex items-center justify-center p-4 relative">
+      {/* 音乐控制 */}
+      <div className="absolute top-4 right-4 z-10">
+        <SimpleAudioControl />
+      </div>
       <div className="max-w-md w-full space-y-8">
         {/* 游戏标题 */}
         <div className="text-center">

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Heart, Star } from 'lucide-react';
 import { getAboutYouReward } from '../data/gameData';
+import { soundEffectManager } from '../utils/soundEffectManager';
 
 interface RewardPopupProps {
   isVisible: boolean;
@@ -21,6 +22,9 @@ const RewardPopup: React.FC<RewardPopupProps> = ({
 
   useEffect(() => {
     if (isVisible) {
+      // 播放彩蛋掉落音效
+      soundEffectManager.playEasterEggDrop();
+      
       // 先显示掉落动画
       setShowAnimation(true);
       setShowContent(false);
@@ -32,10 +36,10 @@ const RewardPopup: React.FC<RewardPopupProps> = ({
         setShowContent(true);
       }, 1000);
       
-      // 2秒后停止跳动动画
+      // 1秒后停止跳动动画
       const bounceTimer = setTimeout(() => {
         setShouldBounce(false);
-      }, 2000);
+      }, 1000);
       
       return () => {
         clearTimeout(contentTimer);
