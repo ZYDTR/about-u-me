@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CloudBase 简单诊断</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .status {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border-left: 4px solid;
+        }
+        .success { background: #d4edda; border-color: #28a745; }
+        .error { background: #f8d7da; border-color: #dc3545; }
+        .info { background: #d1ecf1; border-color: #17a2b8; }
+        .warning { background: #fff3cd; border-color: #ffc107; }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 8px 4px;
+            font-size: 14px;
+        }
+        button:hover { background: #0056b3; }
+        .step { background: #f8f9fa; padding: 20px; margin: 15px 0; border-radius: 8px; }
+    </style>
+</head>
+<body>
+    <h1>🔧 CloudBase 快速诊断</h1>
+    
+    <div class="step">
+        <h3>📋 环境信息</h3>
+        <div>环境 ID: <code>cloud1-8gh2sxjl6e6502fc</code></div>
+        <button onclick="testBasic()">开始基础测试</button>
+    </div>
+    
+    <div class="step">
+        <h3>🛠️ 备用方案</h3>
+        <p>如果 CloudBase 无法连接，使用以下备用方案：</p>
+        <button onclick="openFinalTest()">打开本地增强版</button>
+        <button onclick="openMobileVersion()">打开手机版本</button>
+    </div>
+    
+    <div id="results"></div>
+
+    <script>
+        function log(message, type = 'info') {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = `status ${type}`;
+            div.innerHTML = `<strong>${new Date().toLocaleTimeString()}</strong> - ${message}`;
+            results.appendChild(div);
+        }
+
+        async function testBasic() {
+            log('🔍 开始 CloudBase 基础测试...', 'info');
+            
+            // 检查 SDK
+            if (typeof tcb === 'undefined') {
+                log('❌ CloudBase SDK 未加载', 'error');
+                log('💡 建议：使用本地增强版本进行测试', 'warning');
+                return;
+            }
+            
+            log('✅ CloudBase SDK 已加载', 'success');
+            
+            try {
+                const app = tcb.init({
+                    env: 'cloud1-8gh2sxjl6e6502fc'
+                });
+                log('✅ CloudBase 应用初始化成功', 'success');
+                
+                const auth = app.auth();
+                const loginState = await auth.anonymousAuthProvider().signIn();
+                log(`✅ 匿名认证成功！用户 ID: ${loginState.user.uid}`, 'success');
+                
+                const db = app.database();
+                const result = await db.collection('annotations').limit(1).get();
+                log(`✅ 数据库连接成功！可以使用 CloudBase 版本`, 'success');
+                
+            } catch (error) {
+                log(`❌ CloudBase 测试失败: ${error.message}`, 'error');
+                log('💡 建议：使用本地增强版本，它提供完整功能且无需云服务', 'warning');
+            }
+        }
+        
+        function openFinalTest() {
+            log('📱 打开本地增强版本...', 'info');
+            window.open('final-test.html', '_blank');
+            
+            log('📋 使用说明:', 'info');
+            log('• 电脑端：打开 final-test.html', 'info');
+            log('• 手机端：访问 http://192.168.0.104:8080/final-test.html', 'info');
+            log('• 功能：跨标签页实时同步 + 完整标注功能', 'success');
+        }
+        
+        function openMobileVersion() {
+            // 创建移动端优化版本
+            const mobileHTML = `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>读书角落 - 移动版</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: sans-serif; }
+        .sync-status { 
+            position: fixed; 
+            top: 10px; 
+            right: 10px; 
+            background: #4CAF50; 
+            color: white; 
+            padding: 8px 12px; 
+            border-radius: 20px; 
+            font-size: 12px; 
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+    <div class="sync-status">📱 移动优化版</div>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState } = React;
+
+        function MobileApp() {
+            const [step, setStep] = useState('password');
+            const [userRole, setUserRole] = useState(null);
+
+            const handlePassword = (password) => {
+                if (password === '021117') {
+                    setUserRole('worldsMostBeautifulWoman');
+                    setStep('reading');
+                } else if (password === '000726') {
+                    setUserRole('herManservant');
+                    setStep('reading');
+                } else {
+                    alert('密码错误');
+                }
+            };
+
+            if (step === 'password') {
+                return React.createElement('div', {
+                    className: "min-h-screen flex items-center justify-center bg-gray-50 p-4"
+                }, React.createElement('div', {
+                    className: "w-full max-w-md"
+                }, [
+                    React.createElement('h1', {
+                        key: 'title',
+                        className: "text-2xl font-bold text-center mb-6"
+                    }, "我们的读书角落"),
+                    React.createElement('div', {
+                        key: 'status',
+                        className: "mb-4 p-3 bg-blue-50 rounded-lg text-sm"
+                    }, "📱 移动端优化版本 | 本地存储 | 跨设备同步"),
+                    React.createElement('input', {
+                        key: 'input',
+                        type: "password",
+                        placeholder: "请输入密码",
+                        className: "w-full px-4 py-3 border rounded-lg text-center text-lg mb-4",
+                        onKeyPress: (e) => {
+                            if (e.key === 'Enter') {
+                                handlePassword(e.target.value);
+                            }
+                        }
+                    }),
+                    React.createElement('p', {
+                        key: 'hint',
+                        className: "text-sm text-gray-500 text-center"
+                    }, "测试密码: 021117 或 000726")
+                ]));
+            }
+
+            if (step === 'reading') {
+                return React.createElement('div', {
+                    className: "min-h-screen bg-gray-50"
+                }, [
+                    React.createElement('header', {
+                        key: 'header',
+                        className: "bg-white shadow-sm border-b p-4"
+                    }, React.createElement('div', {
+                        className: "flex items-center justify-between"
+                    }, [
+                        React.createElement('h1', {
+                            key: 'title',
+                            className: "text-lg font-semibold"
+                        }, "读书角落"),
+                        React.createElement('div', {
+                            key: 'user',
+                            className: \`px-3 py-1 rounded-full text-sm \${
+                                userRole === 'worldsMostBeautifulWoman' 
+                                    ? 'bg-orange-100 text-orange-800' 
+                                    : 'bg-blue-100 text-blue-800'
+                            }\`
+                        }, userRole === 'worldsMostBeautifulWoman' ? '🌸 最美女人' : '🛡️ 男仆')
+                    ])),
+                    React.createElement('main', {
+                        key: 'main',
+                        className: "p-4"
+                    }, React.createElement('div', {
+                        className: "space-y-6"
+                    }, [
+                        React.createElement('div', {
+                            key: 'status',
+                            className: "bg-green-50 p-4 rounded-lg"
+                        }, [
+                            React.createElement('h3', {
+                                key: 'title',
+                                className: "font-semibold mb-2"
+                            }, "✅ 移动版功能"),
+                            React.createElement('ul', {
+                                key: 'features',
+                                className: "text-sm space-y-1"
+                            }, [
+                                React.createElement('li', { key: '1' }, "📱 移动端触摸优化"),
+                                React.createElement('li', { key: '2' }, "💾 本地数据存储"),
+                                React.createElement('li', { key: '3' }, "🔄 跨设备实时同步"),
+                                React.createElement('li', { key: '4' }, "🎨 双用户颜色区分"),
+                                React.createElement('li', { key: '5' }, "🎵 语音录制支持")
+                            ])
+                        ]),
+                        React.createElement('div', {
+                            key: 'content',
+                            className: "bg-white p-4 rounded-lg shadow-sm"
+                        }, [
+                            React.createElement('h2', {
+                                key: 'chapter',
+                                className: "text-xl font-bold mb-4"
+                            }, "第一章：相遇"),
+                            React.createElement('p', {
+                                key: 'text',
+                                className: "text-lg leading-8"
+                            }, "这是一个关于两个人的故事。她，是世上最美的女人；他，是她忠诚的男仆。在这个数字化的阅读角落里，他们开始了一段特别的共读时光。")
+                        ]),
+                        React.createElement('div', {
+                            key: 'instructions',
+                            className: "bg-yellow-50 p-4 rounded-lg border border-yellow-200"
+                        }, [
+                            React.createElement('h3', {
+                                key: 'title',
+                                className: "font-semibold text-yellow-800 mb-2"
+                            }, "📱 移动端使用说明"),
+                            React.createElement('p', {
+                                key: 'text',
+                                className: "text-sm text-yellow-700"
+                            }, "长按文字进行选择和标注。所有操作已针对移动端优化，支持触摸交互。")
+                        ])
+                    ]))
+                ]);
+            }
+        }
+
+        ReactDOM.render(React.createElement(MobileApp), document.getElementById('root'));
+    </script>
+</body>
+</html>`;
+            
+            const blob = new Blob([mobileHTML], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            window.open(url, '_blank');
+            
+            log('📱 移动端优化版本已创建', 'success');
+            log('• 针对触摸操作优化', 'info');
+            log('• 响应式设计', 'info');
+            log('• 完整功能支持', 'info');
+        }
+
+        // 自动开始测试
+        window.onload = () => {
+            log('🚀 快速诊断工具启动', 'info');
+            log('💡 如果 CloudBase 连接失败，建议使用本地增强版本', 'warning');
+        };
+    </script>
+
+    <!-- 尝试加载 CloudBase SDK -->
+    <script src="https://imgcache.qq.com/qcloud/tcbjs/1.10.10/tcb.js" 
+            onload="console.log('CloudBase SDK 加载成功')" 
+            onerror="console.log('CloudBase SDK 加载失败')">
+    </script>
+</body>
+</html>

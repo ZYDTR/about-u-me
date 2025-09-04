@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CloudBase 连接调试</title>
+    <script src="https://imgcache.qq.com/qcloud/tcbjs/1.10.10/tcb.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .status {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border: 1px solid;
+        }
+        .success { background: #d4edda; border-color: #c3e6cb; color: #155724; }
+        .error { background: #f8d7da; border-color: #f5c6cb; color: #721c24; }
+        .info { background: #d1ecf1; border-color: #bee5eb; color: #0c5460; }
+        .warning { background: #fff3cd; border-color: #ffeaa7; color: #856404; }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #0056b3; }
+        pre {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 CloudBase 连接调试工具</h1>
+    
+    <div id="status"></div>
+    
+    <div style="margin: 20px 0;">
+        <button onclick="testConnection()">🔄 重新测试连接</button>
+        <button onclick="testDatabase()">📁 测试数据库读写</button>
+        <button onclick="testRealtime()">⚡ 测试实时监听</button>
+        <button onclick="clearData()">🗑️ 清空测试数据</button>
+    </div>
+    
+    <div id="logs"></div>
+
+    <script>
+        const ENV_ID = 'cloud1-8gh2sxjl6e6502fc';
+        let app = null;
+        let db = null;
+        let watcher = null;
+
+        function log(message, type = 'info') {
+            const logs = document.getElementById('logs');
+            const div = document.createElement('div');
+            div.className = `status ${type}`;
+            div.innerHTML = `<strong>${new Date().toLocaleTimeString()}</strong> - ${message}`;
+            logs.appendChild(div);
+            console.log(message);
+        }
+
+        function updateStatus(message, type = 'info') {
+            const status = document.getElementById('status');
+            status.className = `status ${type}`;
+            status.innerHTML = message;
+        }
+
+        async function testConnection() {
+            updateStatus('🔄 正在测试 CloudBase 连接...', 'info');
+            log('开始 CloudBase 连接测试');
+
+            try {
+                // 检查 SDK 加载
+                if (typeof tcb === 'undefined') {
+                    throw new Error('CloudBase SDK 未加载');
+                }
+                log('✅ CloudBase SDK 已加载', 'success');
+
+                // 初始化应用
+                app = tcb.init({
+                    env: ENV_ID
+                });
+                log(`✅ CloudBase 应用初始化成功，环境ID: ${ENV_ID}`, 'success');
+
+                // 获取认证状态
+                const auth = app.auth();
+                log('🔐 开始匿名认证...');
+                
+                const loginState = await auth.anonymousAuthProvider().signIn();
+                log(`✅ 匿名认证成功！用户ID: ${loginState.user.uid}`, 'success');
+
+                // 初始化数据库
+                db = app.database();
+                log('✅ 数据库连接建立', 'success');
+
+                updateStatus('✅ CloudBase 连接成功！可以进行下一步测试', 'success');
+                return true;
+
+            } catch (error) {
+                log(`❌ 连接失败: ${error.message}`, 'error');
+                updateStatus(`❌ 连接失败: ${error.message}`, 'error');
+                console.error('CloudBase连接错误:', error);
+                return false;
+            }
+        }
+
+        async function testDatabase() {
+            if (!db) {
+                log('⚠️ 请先测试连接', 'warning');
+                return;
+            }
+
+            try {
+                log('📝 测试数据库写入...');
+                
+                const testData = {
+                    test: true,
+                    message: '测试数据',
+                    timestamp: new Date(),
+                    from: 'debug-tool'
+                };
+
+                const result = await db.collection('annotations').add(testData);
+                log(`✅ 数据写入成功！文档ID: ${result.id}`, 'success');
+
+                log('📖 测试数据库读取...');
+                const queryResult = await db.collection('annotations')
+                    .where({
+                        test: true,
+                        from: 'debug-tool'
+                    })
+                    .get();
+
+                log(`✅ 数据读取成功！找到 ${queryResult.data.length} 条测试记录`, 'success');
+                
+                if (queryResult.data.length > 0) {
+                    log(`最新测试数据: <pre>${JSON.stringify(queryResult.data[0], null, 2)}</pre>`);
+                }
+
+            } catch (error) {
+                log(`❌ 数据库测试失败: ${error.message}`, 'error');
+                console.error('数据库测试错误:', error);
+            }
+        }
+
+        async function testRealtime() {
+            if (!db) {
+                log('⚠️ 请先测试连接', 'warning');
+                return;
+            }
+
+            try {
+                log('⚡ 启动实时监听测试...');
+
+                // 关闭之前的监听
+                if (watcher) {
+                    watcher.close();
+                }
+
+                watcher = db.collection('annotations')
+                    .where({
+                        chapterId: 'chapter-1'
+                    })
+                    .watch({
+                        onChange: (snapshot) => {
+                            log(`🔄 实时数据变化！收到 ${snapshot.docs.length} 条记录`, 'success');
+                            
+                            if (snapshot.docs.length > 0) {
+                                const latest = snapshot.docs[snapshot.docs.length - 1];
+                                log(`最新标注: ${latest.data.type} - "${latest.data.selectedText}" 来自: ${latest.data.author}`);
+                            }
+                        },
+                        onError: (error) => {
+                            log(`❌ 实时监听错误: ${error.message}`, 'error');
+                        }
+                    });
+
+                log('✅ 实时监听已启动，现在可以在其他设备上进行标注测试', 'success');
+
+                // 创建一个测试标注来触发实时更新
+                setTimeout(async () => {
+                    try {
+                        await db.collection('annotations').add({
+                            chapterId: 'chapter-1',
+                            selectedText: '实时测试',
+                            range: { paragraphIndex: 0, startOffset: 0, endOffset: 4 },
+                            author: 'debug-tool',
+                            type: 'comment',
+                            content: '这是实时同步测试消息',
+                            readBy: ['debug-tool'],
+                            createdAt: new Date()
+                        });
+                        log('📝 已创建测试标注，应该触发实时更新', 'info');
+                    } catch (error) {
+                        log(`❌ 创建测试标注失败: ${error.message}`, 'error');
+                    }
+                }, 2000);
+
+            } catch (error) {
+                log(`❌ 实时监听测试失败: ${error.message}`, 'error');
+                console.error('实时监听错误:', error);
+            }
+        }
+
+        async function clearData() {
+            if (!db) {
+                log('⚠️ 请先测试连接', 'warning');
+                return;
+            }
+
+            try {
+                log('🗑️ 清理测试数据...');
+                
+                const testRecords = await db.collection('annotations')
+                    .where({
+                        test: true
+                    })
+                    .get();
+
+                for (const record of testRecords.data) {
+                    await db.collection('annotations').doc(record._id).remove();
+                }
+
+                const debugRecords = await db.collection('annotations')
+                    .where({
+                        author: 'debug-tool'
+                    })
+                    .get();
+
+                for (const record of debugRecords.data) {
+                    await db.collection('annotations').doc(record._id).remove();
+                }
+
+                log(`✅ 已清理 ${testRecords.data.length + debugRecords.data.length} 条测试数据`, 'success');
+
+            } catch (error) {
+                log(`❌ 清理数据失败: ${error.message}`, 'error');
+            }
+        }
+
+        // 页面加载时自动测试连接
+        window.onload = () => {
+            log('🚀 CloudBase 调试工具启动');
+            log(`🌐 当前环境ID: ${ENV_ID}`);
+            testConnection();
+        };
+    </script>
+</body>
+</html>

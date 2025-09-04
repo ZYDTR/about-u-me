@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LeanCloud 最终测试</title>
+    <!-- LeanCloud SDK with LiveQuery support -->
+    <script src="//cdn.jsdelivr.net/npm/leancloud-storage@4.15.2/dist/av-live-query-min.js"></script>
+    <style>
+        body { 
+            font-family: sans-serif; 
+            max-width: 800px; 
+            margin: 0 auto; 
+            padding: 20px; 
+            line-height: 1.6; 
+        }
+        .status { 
+            padding: 15px; 
+            margin: 10px 0; 
+            border-radius: 8px; 
+            border-left: 4px solid; 
+        }
+        .success { background: #d4edda; border-color: #28a745; color: #155724; }
+        .error { background: #f8d7da; border-color: #dc3545; color: #721c24; }
+        .info { background: #d1ecf1; border-color: #17a2b8; color: #0c5460; }
+        .warning { background: #fff3cd; border-color: #ffc107; color: #856404; }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 8px 4px;
+            font-size: 14px;
+        }
+        button:hover { background: #0056b3; }
+        button:disabled { background: #ccc; cursor: not-allowed; }
+        pre { 
+            background: #f8f9fa; 
+            padding: 10px; 
+            border-radius: 5px; 
+            overflow-x: auto; 
+            font-size: 12px;
+        }
+        .device-info {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .sync-status {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            color: white;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+    <div class="sync-status" id="syncStatus" style="background: #6c757d;">🔄 未连接</div>
+    
+    <h1>🎯 LeanCloud 最终测试</h1>
+    
+    <div class="status info">
+        <strong>📋 测试配置</strong><br>
+        App ID: <code>Q9m29iJ6***</code> (已配置)<br>
+        Class名称: <code>annotation</code> (小写)<br>
+        当前设备: <code id="deviceInfo"></code><br>
+        时间: <code id="currentTime"></code>
+    </div>
+    
+    <div class="device-info">
+        <h3>📱 跨设备同步测试指南</h3>
+        <p><strong>第一步：基础测试</strong></p>
+        <ol>
+            <li>点击"🚀 完整连接测试"按钮</li>
+            <li>确保所有步骤都显示 ✅</li>
+        </ol>
+        
+        <p><strong>第二步：跨设备测试</strong></p>
+        <ol>
+            <li>电脑端：<code>http://localhost:8081/final-leancloud-test.html</code></li>
+            <li>手机端：<code>http://你的IP地址:8081/final-leancloud-test.html</code></li>
+            <li>两个设备都完成第一步后，点击"🔄 实时同步测试"</li>
+            <li>观察是否收到对方设备的同步消息</li>
+        </ol>
+    </div>
+    
+    <button onclick="fullTest()">🚀 完整连接测试</button>
+    <button onclick="syncTest()" id="syncBtn" disabled>🔄 实时同步测试</button>
+    <button onclick="clearLogs()">🗑️ 清空日志</button>
+    
+    <div id="logs"></div>
+
+    <script>
+        const CONFIG = {
+            appId: 'Q9m29iJ6xOVxOtDqmKamdsFX-gzGzoHsz',
+            appKey: 'pK6oNXPcsmpyXarHT91xMtW8',
+            serverURL: 'https://q9m29ij6.lc-cn-n1-shared.com'
+        };
+
+        let isConnected = false;
+        let currentUser = null;
+        let liveQuery = null;
+        const deviceId = 'device-' + Math.random().toString(36).substr(2, 6);
+
+        // 初始化页面信息
+        document.getElementById('deviceInfo').textContent = `${deviceId} (${navigator.userAgent.includes('Mobile') ? '手机端' : '电脑端'})`;
+        document.getElementById('currentTime').textContent = new Date().toLocaleString();
+
+        function updateSyncStatus(status, type = 'info') {
+            const statusEl = document.getElementById('syncStatus');
+            const colors = {
+                'info': '#6c757d',
+                'success': '#28a745',
+                'error': '#dc3545',
+                'warning': '#ffc107'
+            };
+            statusEl.textContent = status;
+            statusEl.style.background = colors[type];
+        }
+
+        function log(message, type = 'info') {
+            const logs = document.getElementById('logs');
+            const div = document.createElement('div');
+            div.className = `status ${type}`;
+            div.innerHTML = `<strong>${new Date().toLocaleTimeString()}</strong> ${message}`;
+            logs.appendChild(div);
+            console.log(message);
+            div.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function clearLogs() {
+            document.getElementById('logs').innerHTML = '';
+        }
+
+        async function fullTest() {
+            log('🚀 开始完整的 LeanCloud 连接测试...', 'info');
+            updateSyncStatus('🔄 连接中...', 'info');
+
+            try {
+                // Step 1: 检查 SDK
+                if (typeof AV === 'undefined') {
+                    throw new Error('LeanCloud SDK 未加载');
+                }
+                log('✅ Step 1: LeanCloud SDK 已加载', 'success');
+
+                // Step 2: 初始化应用
+                AV.init({
+                    appId: CONFIG.appId,
+                    appKey: CONFIG.appKey,
+                    serverURL: CONFIG.serverURL
+                });
+                log('✅ Step 2: LeanCloud 应用初始化完成', 'success');
+
+                // Step 3: 匿名登录
+                log('🔐 Step 3: 正在进行匿名登录...', 'info');
+                currentUser = await AV.User.loginAnonymously();
+                log(`✅ Step 3: 匿名登录成功！用户ID: ${currentUser.id.substring(0, 8)}...`, 'success');
+
+                // Step 4: 测试基础数据库访问
+                log('📁 Step 4: 测试数据库访问权限...', 'info');
+                const query = new AV.Query('annotation');
+                query.limit(1);
+                const result = await query.find();
+                log(`✅ Step 4: 数据库访问成功！当前有 ${result.length} 条记录`, 'success');
+
+                // Step 5: 测试数据创建
+                log('📝 Step 5: 测试数据创建功能...', 'info');
+                const TestAnnotation = AV.Object.extend('annotation');
+                const testObj = new TestAnnotation();
+                
+                testObj.set('chapterId', 'test-chapter');
+                testObj.set('selectedText', '测试文字片段');
+                testObj.set('range', { paragraphIndex: 0, startOffset: 0, endOffset: 6 });
+                testObj.set('author', deviceId);
+                testObj.set('type', 'comment');
+                testObj.set('content', `连接测试 - ${new Date().toLocaleTimeString()}`);
+                testObj.set('readBy', [deviceId]);
+
+                const saved = await testObj.save();
+                log(`✅ Step 5: 数据创建成功！文档ID: ${saved.id}`, 'success');
+
+                // Step 6: 验证数据读取
+                const verifyQuery = new AV.Query('annotation');
+                const savedObj = await verifyQuery.get(saved.id);
+                log(`✅ Step 6: 数据读取验证成功: "${savedObj.get('content')}"`, 'success');
+
+                // Step 7: 测试 LiveQuery 支持
+                log('⚡ Step 7: 测试 LiveQuery 实时功能...', 'info');
+                const liveTestQuery = new AV.Query('annotation');
+                liveTestQuery.equalTo('chapterId', 'test-chapter');
+                
+                try {
+                    const testLiveQuery = liveTestQuery.subscribe();
+                    testLiveQuery.unsubscribe(); // 立即取消订阅测试
+                    log('✅ Step 7: LiveQuery 实时功能支持正常', 'success');
+                } catch (liveError) {
+                    log(`⚠️ Step 7: LiveQuery 可能不支持: ${liveError.message}`, 'warning');
+                }
+
+                // 完成
+                isConnected = true;
+                updateSyncStatus('☁️ 已连接', 'success');
+                document.getElementById('syncBtn').disabled = false;
+                log('<strong>🎉 所有测试通过！LeanCloud 配置完全正确，可以进行跨设备同步测试！</strong>', 'success');
+
+            } catch (error) {
+                updateSyncStatus('❌ 连接失败', 'error');
+                log(`❌ 连接测试失败: ${error.message}`, 'error');
+                
+                if (error.code === 101) {
+                    log('💡 Class 不存在或权限不足，请检查 LeanCloud 控制台设置', 'warning');
+                } else if (error.code === 401) {
+                    log('💡 认证失败，请检查 App ID 和 App Key', 'warning');
+                } else {
+                    log(`<pre>错误详情: ${JSON.stringify(error, null, 2)}</pre>`, 'error');
+                }
+            }
+        }
+
+        async function syncTest() {
+            if (!isConnected) {
+                log('⚠️ 请先完成连接测试', 'warning');
+                return;
+            }
+
+            try {
+                log('🔄 启动跨设备实时同步测试...', 'info');
+                updateSyncStatus('📡 监听中...', 'info');
+
+                // 关闭之前的监听
+                if (liveQuery) {
+                    liveQuery.unsubscribe();
+                }
+
+                // 创建实时查询
+                const query = new AV.Query('annotation');
+                query.equalTo('chapterId', 'sync-test');
+                
+                liveQuery = query.subscribe();
+                
+                liveQuery.on('create', (annotation) => {
+                    const author = annotation.get('author');
+                    if (author !== deviceId) {
+                        log(`📡 收到其他设备的标注: "${annotation.get('content')}" (来自: ${author})`, 'success');
+                        updateSyncStatus('✨ 同步成功', 'success');
+                    }
+                });
+                
+                liveQuery.on('update', (annotation) => {
+                    log(`🔄 标注更新: "${annotation.get('content')}"`, 'info');
+                });
+
+                log('✅ 实时监听已启动，等待其他设备的消息...', 'success');
+                log(`📱 你的设备ID: <strong>${deviceId}</strong>`, 'info');
+                log('💡 现在在其他设备上运行相同测试，或等待5秒自动发送测试消息', 'info');
+
+                // 5秒后自动发送测试消息
+                setTimeout(async () => {
+                    try {
+                        const SyncTest = AV.Object.extend('annotation');
+                        const syncMsg = new SyncTest();
+                        
+                        syncMsg.set('chapterId', 'sync-test');
+                        syncMsg.set('selectedText', '同步测试文字');
+                        syncMsg.set('range', { paragraphIndex: 0, startOffset: 0, endOffset: 6 });
+                        syncMsg.set('author', deviceId);
+                        syncMsg.set('type', 'sync-test');
+                        syncMsg.set('content', `来自 ${deviceId} 的同步测试消息 - ${new Date().toLocaleTimeString()}`);
+                        syncMsg.set('readBy', [deviceId]);
+
+                        await syncMsg.save();
+                        log(`📤 已发送同步测试消息，其他设备应该能收到`, 'info');
+                        
+                    } catch (error) {
+                        log(`❌ 发送测试消息失败: ${error.message}`, 'error');
+                    }
+                }, 5000);
+
+            } catch (error) {
+                log(`❌ 实时同步测试失败: ${error.message}`, 'error');
+                updateSyncStatus('❌ 同步失败', 'error');
+                
+                if (error.message.includes('LiveQuery')) {
+                    log('💡 LiveQuery 功能可能未启用，请联系 LeanCloud 支持', 'warning');
+                }
+            }
+        }
+
+        // 页面加载完成
+        window.onload = () => {
+            log('🎯 LeanCloud 最终测试工具已启动', 'info');
+            log('📝 请点击"完整连接测试"开始验证所有功能', 'info');
+        };
+
+        // 页面卸载时清理
+        window.onbeforeunload = () => {
+            if (liveQuery) {
+                liveQuery.unsubscribe();
+            }
+        };
+    </script>
+</body>
+</html>

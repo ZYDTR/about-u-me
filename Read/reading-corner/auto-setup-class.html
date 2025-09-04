@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>自动创建和配置 LeanCloud Class</title>
+    <!-- LeanCloud SDK -->
+    <script src="//cdn.jsdelivr.net/npm/leancloud-storage@4.15.2/dist/av-live-query-min.js"></script>
+    <style>
+        body { 
+            font-family: sans-serif; 
+            max-width: 800px; 
+            margin: 0 auto; 
+            padding: 20px; 
+            line-height: 1.6; 
+        }
+        .status { 
+            padding: 15px; 
+            margin: 10px 0; 
+            border-radius: 8px; 
+            border-left: 4px solid; 
+        }
+        .success { background: #d4edda; border-color: #28a745; color: #155724; }
+        .error { background: #f8d7da; border-color: #dc3545; color: #721c24; }
+        .info { background: #d1ecf1; border-color: #17a2b8; color: #0c5460; }
+        .warning { background: #fff3cd; border-color: #ffc107; color: #856404; }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 8px 4px;
+            font-size: 14px;
+        }
+        button:hover { background: #0056b3; }
+        button:disabled { background: #ccc; cursor: not-allowed; }
+        .step-box {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border-left: 4px solid #17a2b8;
+        }
+        .class-option {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            cursor: pointer;
+            border: 2px solid transparent;
+        }
+        .class-option:hover {
+            border-color: #007bff;
+        }
+        .class-option.selected {
+            border-color: #28a745;
+            background: #d4edda;
+        }
+    </style>
+</head>
+<body>
+    <h1>🛠️ 自动创建 LeanCloud Class</h1>
+    
+    <div class="status info">
+        <strong>📋 当前问题</strong><br>
+        你的 <code>annotation</code> Class 未正确绑定到应用，导致无法访问。<br>
+        这个工具将自动创建并配置正确的 Class。
+    </div>
+    
+    <div class="step-box">
+        <h3>🎯 选择 Class 名称策略</h3>
+        <p>请选择要创建的 Class 名称：</p>
+        
+        <div class="class-option" onclick="selectClass('ReadingAnnotation')" id="option1">
+            <strong>ReadingAnnotation</strong> (推荐)<br>
+            <small>清晰的命名，避免系统保留字</small>
+        </div>
+        
+        <div class="class-option" onclick="selectClass('Annotation')" id="option2">
+            <strong>Annotation</strong> (简洁)<br>
+            <small>简单命名，首字母大写</small>
+        </div>
+        
+        <div class="class-option" onclick="selectClass('reading_notes')" id="option3">
+            <strong>reading_notes</strong> (下划线)<br>
+            <small>下划线命名风格</small>
+        </div>
+    </div>
+    
+    <button onclick="createAndTestClass()" id="createBtn" disabled>🚀 创建并测试 Class</button>
+    <button onclick="testAllClasses()">🧪 测试现有所有 Class</button>
+    <button onclick="clearLogs()">🗑️ 清空日志</button>
+    
+    <div id="logs"></div>
+
+    <script>
+        const CONFIG = {
+            appId: 'Q9m29iJ6xOVxOtDqmKamdsFX-gzGzoHsz',
+            appKey: 'pK6oNXPcsmpyXarHT91xMtW8',
+            serverURL: 'https://q9m29ij6.lc-cn-n1-shared.com'
+        };
+
+        let selectedClassName = null;
+        let currentUser = null;
+
+        function log(message, type = 'info') {
+            const logs = document.getElementById('logs');
+            const div = document.createElement('div');
+            div.className = `status ${type}`;
+            div.innerHTML = `<strong>${new Date().toLocaleTimeString()}</strong> ${message}`;
+            logs.appendChild(div);
+            console.log(message);
+            div.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function clearLogs() {
+            document.getElementById('logs').innerHTML = '';
+        }
+
+        function selectClass(className) {
+            // 清除之前的选择
+            document.querySelectorAll('.class-option').forEach(el => {
+                el.classList.remove('selected');
+            });
+            
+            // 选中当前选项
+            document.getElementById(className === 'ReadingAnnotation' ? 'option1' : 
+                                  className === 'Annotation' ? 'option2' : 'option3').classList.add('selected');
+            
+            selectedClassName = className;
+            document.getElementById('createBtn').disabled = false;
+            log(`✅ 已选择 Class 名称: ${className}`, 'success');
+        }
+
+        async function initLeanCloud() {
+            try {
+                if (typeof AV === 'undefined') {
+                    throw new Error('LeanCloud SDK 未加载');
+                }
+
+                AV.init({
+                    appId: CONFIG.appId,
+                    appKey: CONFIG.appKey,
+                    serverURL: CONFIG.serverURL
+                });
+
+                if (!currentUser) {
+                    currentUser = await AV.User.loginAnonymously();
+                    log(`✅ LeanCloud 初始化完成，用户ID: ${currentUser.id.substring(0, 8)}...`, 'success');
+                }
+                return true;
+            } catch (error) {
+                log(`❌ LeanCloud 初始化失败: ${error.message}`, 'error');
+                return false;
+            }
+        }
+
+        async function createAndTestClass() {
+            if (!selectedClassName) {
+                log('⚠️ 请先选择一个 Class 名称', 'warning');
+                return;
+            }
+
+            log(`🚀 开始创建并测试 Class: ${selectedClassName}`, 'info');
+            
+            if (!(await initLeanCloud())) return;
+
+            try {
+                // 第一步：创建 Class（通过创建第一个对象）
+                log(`📝 步骤 1: 创建 ${selectedClassName} Class...`, 'info');
+                
+                const TestClass = AV.Object.extend(selectedClassName);
+                const testObj = new TestClass();
+                
+                // 设置测试数据
+                testObj.set('chapterId', 'chapter-1');
+                testObj.set('selectedText', '测试标注文字');
+                testObj.set('range', { 
+                    paragraphIndex: 0, 
+                    startOffset: 0, 
+                    endOffset: 6 
+                });
+                testObj.set('author', 'worldsMostBeautifulWoman');
+                testObj.set('type', 'comment');
+                testObj.set('content', '这是第一个测试标注，用于创建Class');
+                testObj.set('readBy', ['worldsMostBeautifulWoman']);
+                testObj.set('deviceId', 'setup-tool');
+                testObj.set('timestamp', new Date());
+
+                const savedObj = await testObj.save();
+                log(`✅ 步骤 1: Class ${selectedClassName} 创建成功！文档ID: ${savedObj.id}`, 'success');
+
+                // 第二步：测试查询
+                log(`📖 步骤 2: 测试查询功能...`, 'info');
+                const query = new AV.Query(selectedClassName);
+                const results = await query.find();
+                log(`✅ 步骤 2: 查询成功，找到 ${results.length} 条记录`, 'success');
+
+                // 第三步：测试权限
+                log(`🔒 步骤 3: 测试权限设置...`, 'info');
+                const permissionTest = new TestClass();
+                permissionTest.set('testPermission', true);
+                permissionTest.set('content', '权限测试对象');
+                await permissionTest.save();
+                log(`✅ 步骤 3: 权限测试成功，可以正常创建和读取`, 'success');
+
+                // 第四步：创建不同类型的测试数据
+                log(`🎨 步骤 4: 创建多样化测试数据...`, 'info');
+                await createSampleData(selectedClassName);
+                log(`✅ 步骤 4: 测试数据创建完成`, 'success');
+
+                // 第五步：最终验证
+                log(`🔍 步骤 5: 最终验证...`, 'info');
+                const finalQuery = new AV.Query(selectedClassName);
+                const finalResults = await finalQuery.find();
+                log(`✅ 步骤 5: 最终验证成功！${selectedClassName} Class 包含 ${finalResults.length} 条记录`, 'success');
+
+                // 成功总结
+                log(`<strong>🎉 Class "${selectedClassName}" 创建和配置完成！</strong>`, 'success');
+                log(`📝 请更新你的代码，将所有 'annotation' 替换为 '${selectedClassName}'`, 'info');
+                log(`💡 这个 Class 已经自动绑定到你的应用，无需手动配置`, 'success');
+
+            } catch (error) {
+                log(`❌ Class 创建失败: ${error.message}`, 'error');
+                
+                if (error.code === 401) {
+                    log('💡 权限错误：检查 App ID 和 App Key 是否正确', 'warning');
+                } else if (error.code === 101) {
+                    log('💡 访问错误：可能是网络问题或服务端配置问题', 'warning');
+                } else {
+                    log(`<pre>错误详情: ${JSON.stringify(error, null, 2)}</pre>`, 'error');
+                }
+            }
+        }
+
+        async function createSampleData(className) {
+            const SampleClass = AV.Object.extend(className);
+            
+            const sampleData = [
+                {
+                    chapterId: 'chapter-1',
+                    selectedText: '她，是世上最美的女人',
+                    author: 'worldsMostBeautifulWoman',
+                    type: 'reaction',
+                    content: '喜欢'
+                },
+                {
+                    chapterId: 'chapter-1', 
+                    selectedText: '他，是她忠诚的男仆',
+                    author: 'herManservant',
+                    type: 'comment',
+                    content: '忠诚是最重要的品质'
+                },
+                {
+                    chapterId: 'chapter-1',
+                    selectedText: '数字化的阅读角落',
+                    author: 'worldsMostBeautifulWoman',
+                    type: 'deferred',
+                    content: '回信'
+                }
+            ];
+
+            for (let i = 0; i < sampleData.length; i++) {
+                const obj = new SampleClass();
+                const data = sampleData[i];
+                
+                obj.set('chapterId', data.chapterId);
+                obj.set('selectedText', data.selectedText);
+                obj.set('range', { paragraphIndex: 0, startOffset: i * 10, endOffset: i * 10 + data.selectedText.length });
+                obj.set('author', data.author);
+                obj.set('type', data.type);
+                obj.set('content', data.content);
+                obj.set('readBy', [data.author]);
+                
+                await obj.save();
+            }
+        }
+
+        async function testAllClasses() {
+            log('🧪 测试现有的所有可能 Class 名称...', 'info');
+            
+            if (!(await initLeanCloud())) return;
+
+            const classesToTest = [
+                'annotation',
+                'Annotation', 
+                '_Annotation',
+                '_annotation',
+                'ReadingAnnotation',
+                'reading_notes'
+            ];
+
+            for (const className of classesToTest) {
+                try {
+                    const query = new AV.Query(className);
+                    const results = await query.limit(1).find();
+                    log(`✅ ${className}: 存在，包含 ${results.length} 条记录`, 'success');
+                } catch (error) {
+                    if (error.code === 101) {
+                        log(`❌ ${className}: 不存在或无法访问`, 'error');
+                    } else {
+                        log(`❌ ${className}: 错误 - ${error.message}`, 'error');
+                    }
+                }
+            }
+        }
+
+        window.onload = () => {
+            log('🛠️ LeanCloud Class 自动创建工具已启动', 'info');
+            log('📝 请选择一个 Class 名称，然后点击创建按钮', 'info');
+        };
+    </script>
+</body>
+</html>

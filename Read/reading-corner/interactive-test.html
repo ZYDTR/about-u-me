@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我们的读书角落 - 完整功能测试</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .highlight-user-a {
+            background-color: rgba(224, 99, 47, 0.3);
+        }
+        .highlight-user-b {
+            background-color: rgba(173, 216, 230, 0.3);
+        }
+        .annotation-toolbar {
+            position: fixed;
+            background: white;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            padding: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+        }
+    </style>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'user-a': '#E0632F',
+                        'user-b': '#ADD8E6',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        // 模拟数据存储
+        let annotationsData = [];
+        let currentUser = null;
+
+        function TestApp() {
+            const [step, setStep] = useState('password'); // password, role, reading
+            const [userType, setUserType] = useState(null);
+            const [userRole, setUserRole] = useState(null);
+            const [annotations, setAnnotations] = useState([]);
+            const [selection, setSelection] = useState(null);
+            const [toolbarPosition, setToolbarPosition] = useState(null);
+            const [showCommentModal, setShowCommentModal] = useState(false);
+
+            const handlePassword = (password) => {
+                if (password === '021117') {
+                    setUserType('A');
+                    setStep('role');
+                } else if (password === '000726') {
+                    setUserType('B');
+                    setStep('role');
+                } else {
+                    alert('密码错误');
+                }
+            };
+
+            const handleRole = (role) => {
+                // 强制绑定逻辑
+                if (userType === 'A' && role !== 'worldsMostBeautifulWoman') {
+                    alert('请找准自己的位置');
+                    return;
+                }
+                if (userType === 'B' && role !== 'herManservant') {
+                    alert('请找准自己的位置');
+                    return;
+                }
+                
+                setUserRole(role);
+                currentUser = role;
+                setStep('reading');
+            };
+
+            const handleTextSelection = (e) => {
+                const windowSelection = window.getSelection();
+                
+                if (!windowSelection || windowSelection.rangeCount === 0) {
+                    setSelection(null);
+                    setToolbarPosition(null);
+                    return;
+                }
+
+                const range = windowSelection.getRangeAt(0);
+                const selectedText = range.toString().trim();
+                
+                if (!selectedText || selectedText.length < 2) {
+                    setSelection(null);
+                    setToolbarPosition(null);
+                    return;
+                }
+
+                // 检查是否在段落内选择
+                const paragraph = e.target.closest('.selectable-paragraph');
+                if (!paragraph) {
+                    setSelection(null);
+                    setToolbarPosition(null);
+                    return;
+                }
+
+                const paragraphText = paragraph.textContent;
+                const startOffset = paragraphText.indexOf(selectedText);
+                
+                if (startOffset === -1) {
+                    setSelection(null);
+                    setToolbarPosition(null);
+                    return;
+                }
+
+                setSelection({
+                    text: selectedText,
+                    startOffset,
+                    endOffset: startOffset + selectedText.length,
+                    paragraphIndex: parseInt(paragraph.dataset.paragraphIndex)
+                });
+
+                // 计算工具栏位置
+                const rect = range.getBoundingClientRect();
+                const scrollY = window.scrollY;
+                
+                setToolbarPosition({
+                    x: rect.left + (rect.width / 2),
+                    y: rect.top + scrollY - 10
+                });
+            };
+
+            const handleCreateAnnotation = (type, content) => {
+                if (!selection) return;
+
+                const annotation = {
+                    id: Date.now().toString(),
+                    chapterId: 'chapter-1',
+                    selectedText: selection.text,
+                    range: {
+                        paragraphIndex: selection.paragraphIndex,
+                        startOffset: selection.startOffset,
+                        endOffset: selection.endOffset
+                    },
+                    author: userRole,
+                    type,
+                    content,
+                    createdAt: new Date(),
+                    readBy: [userRole]
+                };
+
+                annotationsData.push(annotation);
+                setAnnotations([...annotationsData]);
+                
+                // 清除选择
+                setSelection(null);
+                setToolbarPosition(null);
+                setShowCommentModal(false);
+                window.getSelection()?.removeAllRanges();
+            };
+
+            const handleMarkAsRead = (annotationId) => {
+                const annotation = annotationsData.find(a => a.id === annotationId);
+                if (annotation && !annotation.readBy.includes(userRole)) {
+                    annotation.readBy.push(userRole);
+                    setAnnotations([...annotationsData]);
+                }
+            };
+
+            const closeToolbar = () => {
+                setSelection(null);
+                setToolbarPosition(null);
+                setShowCommentModal(false);
+                window.getSelection()?.removeAllRanges();
+            };
+
+            // 渲染带标注的文本
+            const renderTextWithAnnotations = (text, paragraphIndex) => {
+                const paragraphAnnotations = annotations.filter(a => a.range.paragraphIndex === paragraphIndex);
+                
+                if (paragraphAnnotations.length === 0) {
+                    return text;
+                }
+
+                const sortedAnnotations = [...paragraphAnnotations].sort((a, b) => a.range.startOffset - b.range.startOffset);
+                const segments = [];
+                let currentIndex = 0;
+
+                sortedAnnotations.forEach((annotation, index) => {
+                    const { startOffset, endOffset } = annotation.range;
+                    
+                    // 添加标注前的文本
+                    if (startOffset > currentIndex) {
+                        segments.push(text.slice(currentIndex, startOffset));
+                    }
+                    
+                    // 添加高亮标注
+                    const highlightClass = annotation.author === 'worldsMostBeautifulWoman' ? 'highlight-user-a' : 'highlight-user-b';
+                    const isOwn = annotation.author === userRole;
+                    const otherUser = userRole === 'worldsMostBeautifulWoman' ? 'herManservant' : 'worldsMostBeautifulWoman';
+                    const isRead = annotation.readBy.includes(otherUser);
+                    
+                    segments.push(
+                        React.createElement('span', {
+                            key: `annotation-${annotation.id}`,
+                            className: `${highlightClass} cursor-pointer relative`,
+                            onClick: () => handleMarkAsRead(annotation.id)
+                        }, [
+                            text.slice(startOffset, endOffset),
+                            React.createElement('span', {
+                                key: 'indicator',
+                                className: 'ml-1 text-xs'
+                            }, getAnnotationIndicator(annotation)),
+                            isOwn && isRead && React.createElement('span', {
+                                key: 'read',
+                                className: 'ml-1 text-xs text-green-600'
+                            }, '✓✓')
+                        ])
+                    );
+                    
+                    currentIndex = endOffset;
+                });
+                
+                // 添加剩余文本
+                if (currentIndex < text.length) {
+                    segments.push(text.slice(currentIndex));
+                }
+                
+                return segments;
+            };
+
+            const getAnnotationIndicator = (annotation) => {
+                switch (annotation.type) {
+                    case 'reaction':
+                        if (annotation.content === '思考') return '🤔';
+                        if (annotation.content === '惊讶') return '😮';
+                        if (annotation.content === '喜欢') return '❤️';
+                        if (annotation.content === '疑惑') return '🤨';
+                        break;
+                    case 'deferred': return '💌';
+                    case 'comment': return '💬';
+                    case 'voice': return '🎵';
+                }
+                return '';
+            };
+
+            if (step === 'password') {
+                return React.createElement('div', {
+                    className: "min-h-screen flex items-center justify-center bg-gray-50 px-4"
+                }, React.createElement('div', {
+                    className: "max-w-md w-full space-y-8"
+                }, [
+                    React.createElement('div', {
+                        key: 'header',
+                        className: "text-center"
+                    }, [
+                        React.createElement('h1', {
+                            key: 'title',
+                            className: "text-3xl font-bold text-gray-900 mb-2"
+                        }, "我们的读书角落"),
+                        React.createElement('p', {
+                            key: 'subtitle',
+                            className: "text-gray-600"
+                        }, "请输入密码进入专属空间")
+                    ]),
+                    React.createElement('div', {
+                        key: 'form',
+                        className: "space-y-4"
+                    }, [
+                        React.createElement('input', {
+                            key: 'input',
+                            type: "password",
+                            placeholder: "请输入密码",
+                            className: "w-full px-4 py-3 border rounded-lg text-center text-lg focus:outline-none focus:ring-2 focus:ring-blue-500",
+                            onKeyPress: (e) => {
+                                if (e.key === 'Enter') {
+                                    handlePassword(e.target.value);
+                                }
+                            }
+                        }),
+                        React.createElement('p', {
+                            key: 'hint',
+                            className: "text-sm text-gray-500 text-center"
+                        }, "测试密码: 021117 或 000726")
+                    ])
+                ]));
+            }
+
+            if (step === 'role') {
+                return React.createElement('div', {
+                    className: "min-h-screen flex items-center justify-center bg-gray-50 px-4"
+                }, React.createElement('div', {
+                    className: "max-w-lg w-full space-y-8"
+                }, [
+                    React.createElement('div', {
+                        key: 'header',
+                        className: "text-center"
+                    }, React.createElement('h1', {
+                        className: "text-3xl font-bold text-gray-900 mb-4"
+                    }, "欢迎来到我们的读书角落")),
+                    React.createElement('div', {
+                        key: 'buttons',
+                        className: "space-y-3"
+                    }, [
+                        React.createElement('button', {
+                            key: 'woman',
+                            onClick: () => handleRole('worldsMostBeautifulWoman'),
+                            className: `w-full py-4 px-6 rounded-lg font-medium text-lg transition-all duration-200 ${
+                                userType === 'A' 
+                                    ? 'bg-orange-100 text-orange-800 border-2 border-orange-300 hover:bg-orange-200' 
+                                    : 'bg-gray-200 text-gray-400 cursor-not-allowed opacity-60'
+                            }`
+                        }, "🌸 世上最美的女人"),
+                        React.createElement('button', {
+                            key: 'servant',
+                            onClick: () => handleRole('herManservant'),
+                            className: `w-full py-4 px-6 rounded-lg font-medium text-lg transition-all duration-200 ${
+                                userType === 'B' 
+                                    ? 'bg-blue-100 text-blue-800 border-2 border-blue-300 hover:bg-blue-200' 
+                                    : 'bg-gray-200 text-gray-400 cursor-not-allowed opacity-60'
+                            }`
+                        }, "🛡️ 她的男仆")
+                    ])
+                ]));
+            }
+
+            if (step === 'reading') {
+                const paragraphs = [
+                    "这是一个关于两个人的故事。她，是世上最美的女人；他，是她忠诚的男仆。",
+                    "在这个数字化的阅读角落里，他们开始了一段特别的共读时光。每一个标注，每一次互动，都承载着两颗心之间的默契与温柔。",
+                    "这里没有其他人，只有她和他。在文字的世界里，他们可以自由地表达内心最真实的感受，分享彼此的思考与感悟。"
+                ];
+
+                return React.createElement('div', {
+                    className: "min-h-screen bg-gray-50"
+                }, [
+                    // 头部
+                    React.createElement('header', {
+                        key: 'header',
+                        className: "bg-white shadow-sm border-b sticky top-0 z-10"
+                    }, React.createElement('div', {
+                        className: "max-w-4xl mx-auto px-4 py-3"
+                    }, React.createElement('div', {
+                        className: "flex items-center justify-between"
+                    }, [
+                        React.createElement('h1', {
+                            key: 'title',
+                            className: "text-xl font-semibold text-gray-900"
+                        }, "我们的读书角落"),
+                        React.createElement('div', {
+                            key: 'user',
+                            className: `px-3 py-1 rounded-full text-sm font-medium ${
+                                userRole === 'worldsMostBeautifulWoman' 
+                                    ? 'bg-orange-100 text-orange-800' 
+                                    : 'bg-blue-100 text-blue-800'
+                            }`
+                        }, userRole === 'worldsMostBeautifulWoman' ? '🌸 世上最美的女人' : '🛡️ 她的男仆')
+                    ]))),
+                    
+                    // 主要内容
+                    React.createElement('main', {
+                        key: 'main',
+                        className: "max-w-4xl mx-auto px-4 py-8"
+                    }, React.createElement('div', {
+                        className: "space-y-8"
+                    }, [
+                        React.createElement('header', {
+                            key: 'chapter-header',
+                            className: "text-center border-b pb-6"
+                        }, React.createElement('h1', {
+                            className: "text-3xl font-bold text-gray-900 mb-2"
+                        }, "第一章：相遇")),
+                        
+                        React.createElement('div', {
+                            key: 'content',
+                            className: "prose prose-lg max-w-none"
+                        }, [
+                            ...paragraphs.map((text, index) => 
+                                React.createElement('p', {
+                                    key: `paragraph-${index}`,
+                                    className: "mb-6 leading-8 text-lg text-gray-800 select-text cursor-text selectable-paragraph",
+                                    'data-paragraph-index': index,
+                                    onMouseUp: handleTextSelection,
+                                    onTouchEnd: handleTextSelection
+                                }, renderTextWithAnnotations(text, index))
+                            ),
+                            
+                            React.createElement('div', {
+                                key: 'demo-info',
+                                className: "mt-8 p-4 bg-blue-50 rounded-lg"
+                            }, [
+                                React.createElement('h3', {
+                                    key: 'demo-title',
+                                    className: "font-semibold mb-2"
+                                }, "功能测试说明："),
+                                React.createElement('ul', {
+                                    key: 'demo-list',
+                                    className: "text-sm space-y-1"
+                                }, [
+                                    React.createElement('li', { key: 'select' }, "✅ 选择文本试试看 - 用鼠标拖选或手机长按"),
+                                    React.createElement('li', { key: 'toolbar' }, "✅ 标注工具栏 - 选择后会出现表情和评论按钮"),
+                                    React.createElement('li', { key: 'highlight' }, "✅ 高亮显示 - 不同用户不同颜色"),
+                                    React.createElement('li', { key: 'binding' }, `✅ 角色绑定 - 当前用户: ${userRole === 'worldsMostBeautifulWoman' ? '女生(橙色)' : '男生(蓝色)'}`),
+                                    React.createElement('li', { key: 'realtime' }, "✅ 即时显示 - 标注立即可见")
+                                ])
+                            ])
+                        ])
+                    ])),
+                    
+                    // 标注工具栏
+                    toolbarPosition && React.createElement('div', {
+                        key: 'toolbar',
+                        className: "annotation-toolbar",
+                        style: {
+                            left: `${toolbarPosition.x}px`,
+                            top: `${toolbarPosition.y}px`,
+                            transform: 'translate(-50%, -100%)'
+                        }
+                    }, React.createElement('div', {
+                        className: "flex items-center space-x-1"
+                    }, [
+                        // 表情反应
+                        ['🤔', '思考'], ['😮', '惊讶'], ['❤️', '喜欢'], ['🤨', '疑惑']
+                    ].map(([emoji, content]) =>
+                        React.createElement('button', {
+                            key: content,
+                            onClick: () => handleCreateAnnotation('reaction', content),
+                            className: "p-2 rounded-md hover:bg-gray-100 transition-colors text-xl",
+                            title: content
+                        }, emoji)
+                    ).concat([
+                        React.createElement('div', {
+                            key: 'divider',
+                            className: "w-px h-8 bg-gray-300 mx-1"
+                        }),
+                        React.createElement('button', {
+                            key: 'deferred',
+                            onClick: () => handleCreateAnnotation('deferred', '回信'),
+                            className: "p-2 rounded-md hover:bg-gray-100 transition-colors text-xl",
+                            title: "回信"
+                        }, '💌'),
+                        React.createElement('button', {
+                            key: 'comment',
+                            onClick: () => setShowCommentModal(true),
+                            className: "p-2 rounded-md hover:bg-gray-100 transition-colors text-xl",
+                            title: "评论"
+                        }, '💬')
+                    ]))),
+                    
+                    // 遮罩层
+                    toolbarPosition && React.createElement('div', {
+                        key: 'overlay',
+                        className: "fixed inset-0 z-30",
+                        onClick: closeToolbar
+                    }),
+                    
+                    // 评论模态框
+                    showCommentModal && React.createElement('div', {
+                        key: 'comment-modal',
+                        className: "fixed inset-0 bg-black bg-opacity-50 flex items-end justify-center z-50 p-4"
+                    }, React.createElement('div', {
+                        className: "bg-white rounded-t-xl w-full max-w-lg max-h-[80vh] flex flex-col"
+                    }, [
+                        React.createElement('div', {
+                            key: 'modal-header',
+                            className: "flex items-center justify-between p-4 border-b"
+                        }, [
+                            React.createElement('h3', {
+                                key: 'modal-title',
+                                className: "text-lg font-semibold"
+                            }, "添加评论"),
+                            React.createElement('button', {
+                                key: 'modal-close',
+                                onClick: closeToolbar,
+                                className: "text-gray-400 hover:text-gray-600 text-2xl"
+                            }, '×')
+                        ]),
+                        React.createElement('div', {
+                            key: 'modal-content',
+                            className: "flex-1 p-4"
+                        }, [
+                            React.createElement('textarea', {
+                                key: 'comment-input',
+                                placeholder: "输入你的想法...",
+                                className: "w-full h-32 p-3 border border-gray-300 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500",
+                                id: 'comment-text'
+                            }),
+                            React.createElement('div', {
+                                key: 'modal-buttons',
+                                className: "flex justify-end space-x-2 mt-4"
+                            }, [
+                                React.createElement('button', {
+                                    key: 'cancel',
+                                    onClick: closeToolbar,
+                                    className: "px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
+                                }, "取消"),
+                                React.createElement('button', {
+                                    key: 'submit',
+                                    onClick: () => {
+                                        const content = document.getElementById('comment-text').value.trim();
+                                        if (content) {
+                                            handleCreateAnnotation('comment', content);
+                                        }
+                                    },
+                                    className: "px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                                }, "提交")
+                            ])
+                        ])
+                    ]))
+                ]);
+            }
+
+            return null;
+        }
+
+        ReactDOM.render(React.createElement(TestApp), document.getElementById('root'));
+    </script>
+</body>
+</html>

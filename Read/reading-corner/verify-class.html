@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>验证 LeanCloud Class</title>
+    <!-- LeanCloud SDK -->
+    <script src="//cdn.jsdelivr.net/npm/leancloud-storage@4.15.2/dist/av-live-query-min.js"></script>
+    <style>
+        body { 
+            font-family: sans-serif; 
+            max-width: 800px; 
+            margin: 0 auto; 
+            padding: 20px; 
+            line-height: 1.6; 
+        }
+        .status { 
+            padding: 15px; 
+            margin: 10px 0; 
+            border-radius: 8px; 
+            border-left: 4px solid; 
+        }
+        .success { background: #d4edda; border-color: #28a745; color: #155724; }
+        .error { background: #f8d7da; border-color: #dc3545; color: #721c24; }
+        .info { background: #d1ecf1; border-color: #17a2b8; color: #0c5460; }
+        .warning { background: #fff3cd; border-color: #ffc107; color: #856404; }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 8px 4px;
+        }
+        button:hover { background: #0056b3; }
+        .step-guide {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 4px solid #17a2b8;
+        }
+        .class-input {
+            width: 200px;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin: 0 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 验证 LeanCloud Class</h1>
+    
+    <div class="step-guide">
+        <h3>📋 操作指南</h3>
+        <p><strong>在使用这个验证工具之前，请确保已在 LeanCloud 控制台完成：</strong></p>
+        <ol>
+            <li>✅ 已创建 Class（建议名称：<code>ReadingAnnotation</code>）</li>
+            <li>✅ 已设置权限（find、create、update、delete、get 都设为"所有用户"）</li>
+        </ol>
+        <p><strong>然后在下面输入你创建的 Class 名称进行验证：</strong></p>
+    </div>
+    
+    <div class="status info">
+        <label><strong>Class 名称：</strong></label>
+        <input type="text" id="classInput" class="class-input" value="ReadingAnnotation" placeholder="输入Class名称">
+        <button onclick="verifyClass()">🔍 验证 Class</button>
+        <button onclick="createTestData()">📝 创建测试数据</button>
+        <button onclick="testSync()">🔄 测试同步功能</button>
+    </div>
+    
+    <div id="logs"></div>
+
+    <script>
+        const CONFIG = {
+            appId: 'Q9m29iJ6xOVxOtDqmKamdsFX-gzGzoHsz',
+            appKey: 'pK6oNXPcsmpyXarHT91xMtW8',
+            serverURL: 'https://q9m29ij6.lc-cn-n1-shared.com'
+        };
+
+        let isInitialized = false;
+        let currentUser = null;
+        let currentClassName = null;
+
+        function log(message, type = 'info') {
+            const logs = document.getElementById('logs');
+            const div = document.createElement('div');
+            div.className = `status ${type}`;
+            div.innerHTML = `<strong>${new Date().toLocaleTimeString()}</strong> ${message}`;
+            logs.appendChild(div);
+            console.log(message);
+            div.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        async function initLeanCloud() {
+            if (isInitialized) return true;
+            
+            try {
+                if (typeof AV === 'undefined') {
+                    throw new Error('LeanCloud SDK 未加载');
+                }
+
+                AV.init({
+                    appId: CONFIG.appId,
+                    appKey: CONFIG.appKey,
+                    serverURL: CONFIG.serverURL
+                });
+
+                currentUser = await AV.User.loginAnonymously();
+                isInitialized = true;
+                log(`✅ LeanCloud 初始化完成，用户ID: ${currentUser.id.substring(0, 8)}...`, 'success');
+                return true;
+            } catch (error) {
+                log(`❌ LeanCloud 初始化失败: ${error.message}`, 'error');
+                return false;
+            }
+        }
+
+        async function verifyClass() {
+            const className = document.getElementById('classInput').value.trim();
+            if (!className) {
+                log('⚠️ 请输入 Class 名称', 'warning');
+                return;
+            }
+
+            currentClassName = className;
+            log(`🔍 开始验证 Class: ${className}`, 'info');
+            
+            if (!(await initLeanCloud())) return;
+
+            try {
+                // 测试1：基本查询权限
+                log(`📖 测试 1: 查询权限...`, 'info');
+                const query = new AV.Query(className);
+                const results = await query.limit(1).find();
+                log(`✅ 测试 1: 查询成功！当前有 ${results.length} 条记录`, 'success');
+
+                // 测试2：创建权限
+                log(`📝 测试 2: 创建权限...`, 'info');
+                const TestClass = AV.Object.extend(className);
+                const testObj = new TestClass();
+                testObj.set('testField', '权限验证');
+                testObj.set('timestamp', new Date());
+                const saved = await testObj.save();
+                log(`✅ 测试 2: 创建成功！文档ID: ${saved.id}`, 'success');
+
+                // 测试3：读取权限
+                log(`🔍 测试 3: 读取权限...`, 'info');
+                const readQuery = new AV.Query(className);
+                const readObj = await readQuery.get(saved.id);
+                log(`✅ 测试 3: 读取成功！内容: ${readObj.get('testField')}`, 'success');
+
+                // 测试4：更新权限
+                log(`✏️ 测试 4: 更新权限...`, 'info');
+                readObj.set('testField', '权限验证更新');
+                await readObj.save();
+                log(`✅ 测试 4: 更新成功！`, 'success');
+
+                // 测试5：删除权限
+                log(`🗑️ 测试 5: 删除权限...`, 'info');
+                await readObj.destroy();
+                log(`✅ 测试 5: 删除成功！`, 'success');
+
+                log(`<strong>🎉 Class "${className}" 验证完成！所有权限都正常工作</strong>`, 'success');
+                log(`💡 现在可以使用这个 Class 进行完整的读书角落功能开发`, 'success');
+
+            } catch (error) {
+                log(`❌ Class 验证失败: ${error.message}`, 'error');
+                
+                if (error.code === 101) {
+                    log('💡 Class 不存在，请先在 LeanCloud 控制台创建', 'warning');
+                } else if (error.code === 119) {
+                    log('💡 权限不足，请检查 Class 权限设置', 'warning');
+                } else if (error.code === 401) {
+                    log('💡 认证错误，请检查 App ID 和 App Key', 'warning');
+                } else {
+                    log(`<pre>错误详情: ${JSON.stringify(error, null, 2)}</pre>`, 'error');
+                }
+                
+                log('<strong>🔧 解决方法：</strong>', 'info');
+                log('1. 确保在 LeanCloud 控制台已创建该 Class', 'info');
+                log('2. 确保权限设置为"所有用户"', 'info');
+                log('3. 确保选择了正确的应用', 'info');
+            }
+        }
+
+        async function createTestData() {
+            if (!currentClassName) {
+                log('⚠️ 请先验证 Class', 'warning');
+                return;
+            }
+
+            log(`📝 为 ${currentClassName} 创建读书角落测试数据...`, 'info');
+            
+            if (!(await initLeanCloud())) return;
+
+            try {
+                const TestClass = AV.Object.extend(currentClassName);
+                
+                const testAnnotations = [
+                    {
+                        chapterId: 'chapter-1',
+                        selectedText: '她，是世上最美的女人',
+                        author: 'worldsMostBeautifulWoman',
+                        type: 'reaction',
+                        content: '喜欢',
+                        range: { paragraphIndex: 0, startOffset: 6, endOffset: 17 }
+                    },
+                    {
+                        chapterId: 'chapter-1',
+                        selectedText: '他，是她忠诚的男仆',
+                        author: 'herManservant', 
+                        type: 'comment',
+                        content: '忠诚是最重要的品质',
+                        range: { paragraphIndex: 0, startOffset: 18, endOffset: 27 }
+                    },
+                    {
+                        chapterId: 'chapter-1',
+                        selectedText: '数字化的阅读角落',
+                        author: 'worldsMostBeautifulWoman',
+                        type: 'deferred',
+                        content: '回信',
+                        range: { paragraphIndex: 1, startOffset: 5, endOffset: 13 }
+                    }
+                ];
+
+                for (let i = 0; i < testAnnotations.length; i++) {
+                    const annotation = testAnnotations[i];
+                    const obj = new TestClass();
+                    
+                    obj.set('chapterId', annotation.chapterId);
+                    obj.set('selectedText', annotation.selectedText);
+                    obj.set('range', annotation.range);
+                    obj.set('author', annotation.author);
+                    obj.set('type', annotation.type);
+                    obj.set('content', annotation.content);
+                    obj.set('readBy', [annotation.author]);
+                    
+                    const saved = await obj.save();
+                    log(`✅ 创建标注 ${i + 1}: "${annotation.selectedText}" (${saved.id})`, 'success');
+                }
+
+                log(`🎉 测试数据创建完成！共创建 ${testAnnotations.length} 条标注`, 'success');
+                
+                // 验证数据
+                const query = new AV.Query(currentClassName);
+                const results = await query.find();
+                log(`📊 当前 ${currentClassName} 中共有 ${results.length} 条记录`, 'info');
+
+            } catch (error) {
+                log(`❌ 创建测试数据失败: ${error.message}`, 'error');
+            }
+        }
+
+        async function testSync() {
+            if (!currentClassName) {
+                log('⚠️ 请先验证 Class', 'warning');
+                return;
+            }
+
+            log(`🔄 测试 ${currentClassName} 的实时同步功能...`, 'info');
+            
+            if (!(await initLeanCloud())) return;
+
+            try {
+                const query = new AV.Query(currentClassName);
+                const liveQuery = query.subscribe();
+                
+                liveQuery.on('create', (obj) => {
+                    log(`📡 收到新标注: "${obj.get('selectedText')}" 来自: ${obj.get('author')}`, 'success');
+                });
+                
+                liveQuery.on('update', (obj) => {
+                    log(`🔄 标注更新: "${obj.get('selectedText')}"`, 'info');
+                });
+
+                log(`✅ 实时同步监听已启动`, 'success');
+                log(`💡 现在可以在其他设备上测试，或等待3秒后自动创建测试消息`, 'info');
+
+                // 3秒后创建测试消息
+                setTimeout(async () => {
+                    try {
+                        const TestClass = AV.Object.extend(currentClassName);
+                        const syncTest = new TestClass();
+                        
+                        syncTest.set('chapterId', 'sync-test');
+                        syncTest.set('selectedText', '同步测试消息');
+                        syncTest.set('author', 'sync-tester');
+                        syncTest.set('type', 'sync');
+                        syncTest.set('content', `同步测试 - ${new Date().toLocaleTimeString()}`);
+                        syncTest.set('range', { paragraphIndex: 0, startOffset: 0, endOffset: 6 });
+                        
+                        await syncTest.save();
+                        log(`📤 已发送同步测试消息，应该会触发实时更新`, 'info');
+                        
+                    } catch (error) {
+                        log(`❌ 同步测试失败: ${error.message}`, 'error');
+                    }
+                }, 3000);
+
+            } catch (error) {
+                log(`❌ 实时同步测试失败: ${error.message}`, 'error');
+                
+                if (error.message.includes('LiveQuery')) {
+                    log('💡 LiveQuery 功能可能未启用，但基本功能仍可使用', 'warning');
+                }
+            }
+        }
+
+        window.onload = () => {
+            log('🔍 LeanCloud Class 验证工具已启动', 'info');
+            log('📝 请确保已在 LeanCloud 控制台创建了 Class，然后输入 Class 名称进行验证', 'info');
+        };
+    </script>
+</body>
+</html>

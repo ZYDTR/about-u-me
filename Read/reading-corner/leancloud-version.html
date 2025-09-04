@@ -1,0 +1,1318 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>读书角落 - LeanCloud 版</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- LeanCloud SDK with LiveQuery support -->
+    <script src="//cdn.jsdelivr.net/npm/leancloud-storage@4.15.2/dist/av-live-query-min.js"></script>
+    
+    <style>
+        .highlight-user-a {
+            background-color: rgba(224, 99, 47, 0.3);
+            position: relative;
+        }
+        .highlight-user-b {
+            background-color: rgba(173, 216, 230, 0.3);
+            position: relative;
+        }
+        
+        .annotation-indicator {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: white;
+            border: 1px solid #ccc;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            cursor: pointer;
+            z-index: 10;
+        }
+        
+        .annotation-toolbar {
+            position: fixed;
+            background: white;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            padding: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+        }
+        
+        .comment-detail-popup {
+            position: fixed;
+            background: white;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            padding: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            z-index: 1001;
+            max-width: 300px;
+            word-wrap: break-word;
+        }
+        
+        .recording-pulse {
+            animation: pulse 1.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        
+        .selectable-paragraph {
+            -webkit-user-select: text;
+            -moz-user-select: text;
+            -ms-user-select: text;
+            user-select: text;
+            -webkit-touch-callout: default;
+            -webkit-tap-highlight-color: rgba(0,0,0,0.1);
+            touch-action: manipulation;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        .sync-indicator {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: #10B981;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            z-index: 1000;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        @media (max-width: 768px) {
+            .annotation-toolbar {
+                position: fixed;
+                bottom: 80px;
+                left: 50%;
+                transform: translateX(-50%);
+                max-width: 90vw;
+                top: auto !important;
+                z-index: 1001;
+            }
+            
+            .annotation-indicator {
+                width: 24px;
+                height: 24px;
+                font-size: 12px;
+                top: -10px;
+                right: -10px;
+            }
+            
+            .selectable-paragraph {
+                line-height: 2;
+                padding: 8px 4px;
+            }
+        }
+    </style>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'user-a': '#E0632F',
+                        'user-b': '#ADD8E6',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body>
+    <div class="sync-indicator" id="syncStatus">🔄 正在连接 LeanCloud...</div>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        // LeanCloud 配置
+        const LEANCLOUD_CONFIG = {
+            appId: 'Q9m29iJ6xOVxOtDqmKamdsFX-gzGzoHsz', // 你的 App ID
+            appKey: 'pK6oNXPcsmpyXarHT91xMtW8', // 你的 App Key
+            serverURL: 'https://q9m29ij6.lc-cn-n1-shared.com' // 你的服务器地址
+        };
+
+        // LeanCloud 实时同步管理器
+        class LeanCloudSync {
+            constructor() {
+                this.isConnected = false;
+                this.listeners = new Set();
+                this.currentUser = null;
+                this.query = null;
+                this.liveQuery = null;
+            }
+
+            async initialize() {
+                try {
+                    console.log('🔄 正在初始化 LeanCloud...');
+                    
+                    // 检查 LeanCloud SDK 是否加载
+                    if (typeof AV === 'undefined') {
+                        throw new Error('LeanCloud SDK 未加载');
+                    }
+
+                    // 初始化 LeanCloud
+                    AV.init({
+                        appId: LEANCLOUD_CONFIG.appId,
+                        appKey: LEANCLOUD_CONFIG.appKey,
+                        serverURL: LEANCLOUD_CONFIG.serverURL
+                    });
+                    
+                    console.log('📱 LeanCloud SDK 初始化完成');
+
+                    // 匿名登录
+                    console.log('🔐 正在进行匿名登录...');
+                    this.currentUser = await AV.User.loginAnonymously();
+                    
+                    console.log('✅ 匿名登录成功，用户ID:', this.currentUser.id);
+                    
+                    // 测试数据库访问权限
+                    const testQuery = new AV.Query('ReadingAnnotation');
+                    testQuery.limit(1);
+                    await testQuery.find();
+                    
+                    console.log('✅ 数据库访问测试成功');
+                    
+                    this.isConnected = true;
+                    console.log('🎉 LeanCloud 云端同步已启用！');
+                    return { success: true, mode: 'cloud' };
+
+                } catch (error) {
+                    console.error('❌ LeanCloud 初始化失败:', error);
+                    console.log('📱 切换到本地同步模式');
+                    
+                    // 显示详细错误信息用于调试
+                    if (error.message.includes('unauthorized')) {
+                        console.error('权限错误：请检查 App ID 和 App Key 是否正确');
+                    } else if (error.message.includes('network')) {
+                        console.error('网络错误：请检查网络连接');
+                    } else {
+                        console.error('其他错误：', error.message);
+                    }
+                    
+                    return { success: true, mode: 'local' };
+                }
+            }
+
+            subscribe(callback) {
+                this.listeners.add(callback);
+
+                if (this.isConnected && this.currentUser) {
+                    // 尝试设置 LiveQuery（如果不支持则使用轮询）
+                    try {
+                        this.query = new AV.Query('ReadingAnnotation');
+                        this.query.equalTo('chapterId', 'chapter-1');
+                        
+                        this.liveQuery = this.query.subscribe();
+                        
+                        this.liveQuery.on('create', () => {
+                            this.loadAnnotations().then(callback);
+                        });
+                        
+                        this.liveQuery.on('update', () => {
+                            this.loadAnnotations().then(callback);
+                        });
+                        
+                        this.liveQuery.on('delete', () => {
+                            this.loadAnnotations().then(callback);
+                        });
+                        
+                        console.log('✅ LiveQuery 实时同步已启用');
+                    } catch (error) {
+                        console.log('⚠️ LiveQuery 不支持，使用轮询同步:', error.message);
+                        this.setupCloudPolling(callback);
+                    }
+                } else {
+                    // 本地模式 - 使用定期检查
+                    this.setupLocalSync(callback);
+                }
+
+                return () => {
+                    this.listeners.delete(callback);
+                    if (this.liveQuery) {
+                        this.liveQuery.unsubscribe();
+                    }
+                    if (this.cloudSyncInterval) {
+                        clearInterval(this.cloudSyncInterval);
+                    }
+                    if (this.syncInterval) {
+                        clearInterval(this.syncInterval);
+                    }
+                };
+            }
+
+            setupCloudPolling(callback) {
+                console.log('☁️ 设置 LeanCloud 轮询同步...');
+                
+                // 初始加载
+                this.loadAnnotations().then(callback);
+                
+                // 定期轮询检查更新
+                this.lastCloudUpdateTime = new Date();
+                this.cloudSyncInterval = setInterval(async () => {
+                    try {
+                        const query = new AV.Query('ReadingAnnotation');
+                        query.equalTo('chapterId', 'chapter-1');
+                        query.greaterThan('updatedAt', this.lastCloudUpdateTime);
+                        
+                        const newUpdates = await query.find();
+                        if (newUpdates.length > 0) {
+                            console.log('🔄 检测到云端数据变化，更新界面');
+                            this.lastCloudUpdateTime = new Date();
+                            this.loadAnnotations().then(callback);
+                        }
+                    } catch (error) {
+                        console.error('轮询同步失败:', error);
+                    }
+                }, 3000); // 每3秒检查一次
+                
+                console.log('✅ LeanCloud 轮询同步已启动');
+            }
+
+            setupLocalSync(callback) {
+                console.log('📱 设置本地跨设备同步...');
+                
+                // 使用 BroadcastChannel 进行跨标签页通信
+                if (typeof BroadcastChannel !== 'undefined') {
+                    this.broadcastChannel = new BroadcastChannel('reading-corner-sync');
+                    this.broadcastChannel.onmessage = (event) => {
+                        console.log('📡 收到跨标签页同步消息:', event.data.type);
+                        if (event.data.type === 'annotation-update') {
+                            callback(event.data.annotations);
+                        }
+                    };
+                }
+                
+                // Storage 事件监听（跨标签页）
+                window.addEventListener('storage', (e) => {
+                    if (e.key === 'reading-corner-annotations') {
+                        console.log('💾 检测到存储变化，更新标注');
+                        this.getLocalAnnotations().then(callback);
+                    }
+                });
+
+                // 定期检查更新（确保同步）
+                this.syncInterval = setInterval(() => {
+                    this.getLocalAnnotations().then((annotations) => {
+                        if (JSON.stringify(annotations) !== this.lastKnownAnnotations) {
+                            console.log('🔄 检测到数据变化，更新界面');
+                            this.lastKnownAnnotations = JSON.stringify(annotations);
+                            callback(annotations);
+                        }
+                    });
+                }, 2000);
+                
+                console.log('✅ 本地同步系统已启动');
+            }
+
+            async getAnnotations() {
+                if (this.isConnected) {
+                    return this.loadAnnotations();
+                } else {
+                    return this.getLocalAnnotations();
+                }
+            }
+
+            async loadAnnotations() {
+                try {
+                    const query = new AV.Query('ReadingAnnotation');
+                    query.equalTo('chapterId', 'chapter-1');
+                    query.descending('createdAt');
+                    
+                    const results = await query.find();
+                    
+                    return results.map(obj => ({
+                        _id: obj.id,
+                        chapterId: obj.get('chapterId'),
+                        selectedText: obj.get('selectedText'),
+                        range: obj.get('range'),
+                        author: obj.get('author'),
+                        type: obj.get('type'),
+                        content: obj.get('content'),
+                        readBy: obj.get('readBy') || [],
+                        createdAt: obj.createdAt || obj.get('createdAt') || new Date()
+                    }));
+                } catch (error) {
+                    console.error('加载标注失败:', error);
+                    return [];
+                }
+            }
+
+            async getLocalAnnotations() {
+                try {
+                    const stored = localStorage.getItem('reading-corner-annotations');
+                    return stored ? JSON.parse(stored) : [];
+                } catch {
+                    return [];
+                }
+            }
+
+            async addAnnotation(annotation) {
+                if (this.isConnected) {
+                    return this.saveToLeanCloud(annotation);
+                } else {
+                    return this.saveToLocal(annotation);
+                }
+            }
+
+            async saveToLeanCloud(annotation) {
+                try {
+                    const Annotation = AV.Object.extend('ReadingAnnotation');
+                    const obj = new Annotation();
+                    
+                    // 处理语音文件上传
+                    if (annotation.type === 'voice' && annotation.content instanceof Blob) {
+                        const file = new AV.File('voice.webm', annotation.content);
+                        const uploadedFile = await file.save();
+                        annotation.content = uploadedFile.url();
+                    }
+
+                    obj.set('chapterId', annotation.chapterId);
+                    obj.set('selectedText', annotation.selectedText);
+                    obj.set('range', annotation.range);
+                    obj.set('author', annotation.author);
+                    obj.set('type', annotation.type);
+                    obj.set('content', annotation.content);
+                    obj.set('readBy', annotation.readBy);
+                    // 不要设置 createdAt，LeanCloud 会自动生成
+
+                    const savedObj = await obj.save();
+                    
+                    return {
+                        _id: savedObj.id,
+                        ...annotation,
+                        createdAt: savedObj.get('createdAt')
+                    };
+                } catch (error) {
+                    console.error('保存到 LeanCloud 失败:', error);
+                    // 回退到本地存储
+                    return this.saveToLocal(annotation);
+                }
+            }
+
+            async saveToLocal(annotation) {
+                try {
+                    console.log('💾 保存标注到本地:', annotation.type);
+                    
+                    // 处理语音文件 - 转换为 base64
+                    if (annotation.type === 'voice' && annotation.content instanceof Blob) {
+                        annotation.content = await this.blobToBase64(annotation.content);
+                    }
+
+                    const annotations = await this.getLocalAnnotations();
+                    const newAnnotation = {
+                        ...annotation,
+                        _id: Date.now().toString() + Math.random().toString(36).substr(2, 5),
+                        createdAt: new Date().toISOString()
+                    };
+                    
+                    annotations.push(newAnnotation);
+                    localStorage.setItem('reading-corner-annotations', JSON.stringify(annotations));
+                    
+                    // 使用 BroadcastChannel 通知其他标签页
+                    if (this.broadcastChannel) {
+                        this.broadcastChannel.postMessage({
+                            type: 'annotation-update',
+                            annotations: annotations
+                        });
+                    }
+                    
+                    // 备用方案：手动触发 storage 事件
+                    try {
+                        window.dispatchEvent(new StorageEvent('storage', {
+                            key: 'reading-corner-annotations',
+                            newValue: JSON.stringify(annotations),
+                            oldValue: null,
+                            storageArea: localStorage
+                        }));
+                    } catch (e) {
+                        console.warn('Storage event 触发失败:', e.message);
+                    }
+                    
+                    console.log('✅ 标注保存成功，ID:', newAnnotation._id);
+                    return newAnnotation;
+                } catch (error) {
+                    console.error('❌ 本地保存失败:', error);
+                    return null;
+                }
+            }
+
+            blobToBase64(blob) {
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = () => resolve(reader.result);
+                    reader.onerror = reject;
+                    reader.readAsDataURL(blob);
+                });
+            }
+        }
+
+        // 全局同步管理器
+        const syncManager = new LeanCloudSync();
+
+        function App() {
+            const [step, setStep] = useState('loading');
+            const [userType, setUserType] = useState(null);
+            const [userRole, setUserRole] = useState(null);
+            const [annotations, setAnnotations] = useState([]);
+            const [selection, setSelection] = useState(null);
+            const [toolbarPosition, setToolbarPosition] = useState(null);
+            const [showCommentModal, setShowCommentModal] = useState(false);
+            const [showVoiceModal, setShowVoiceModal] = useState(false);
+            const [commentDetail, setCommentDetail] = useState(null);
+            const [syncMode, setSyncMode] = useState('loading');
+            
+            // 语音录制状态
+            const [voiceState, setVoiceState] = useState('idle');
+            const [recordingTime, setRecordingTime] = useState(0);
+            const [audioBlob, setAudioBlob] = useState(null);
+            const [audioUrl, setAudioUrl] = useState(null);
+            
+            const mediaRecorderRef = useRef(null);
+            const timerRef = useRef(null);
+
+            // 扩展的表情选项
+            const reactions = [
+                ['🤔', '思考'], ['😮', '惊讶'], ['❤️', '喜欢'], ['🤨', '疑惑'],
+                ['😞', '难过'], ['😱', '害怕'], ['🤐', '闭嘴'], ['😴', '睡觉'],
+                ['🤥', '说谎'], ['😤', '生气'], ['😗', '亲亲'], ['😍', '爱心眼']
+            ];
+
+            // 初始化同步系统
+            useEffect(() => {
+                const init = async () => {
+                    const result = await syncManager.initialize();
+                    setSyncMode(result.mode);
+                    
+                    // 更新同步状态显示
+                    const statusEl = document.getElementById('syncStatus');
+                    if (statusEl) {
+                        statusEl.textContent = result.mode === 'cloud' ? '☁️ LeanCloud 轮询同步' : '💾 本地模式';
+                        statusEl.style.background = result.mode === 'cloud' ? '#10B981' : '#6366F1';
+                    }
+                    
+                    setStep('password');
+                };
+                init();
+            }, []);
+
+            // 订阅数据变化
+            useEffect(() => {
+                if (step === 'reading') {
+                    const loadInitialData = async () => {
+                        const data = await syncManager.getAnnotations();
+                        setAnnotations(data);
+                    };
+                    
+                    loadInitialData();
+                    
+                    const unsubscribe = syncManager.subscribe((newAnnotations) => {
+                        setAnnotations(newAnnotations);
+                    });
+                    
+                    return unsubscribe;
+                }
+            }, [step]);
+
+            const handlePassword = (password) => {
+                if (password === '021117') {
+                    setUserType('A');
+                    setStep('role');
+                } else if (password === '000726') {
+                    setUserType('B');
+                    setStep('role');
+                } else {
+                    alert('密码错误');
+                }
+            };
+
+            const handleRole = (role) => {
+                if (userType === 'A' && role !== 'worldsMostBeautifulWoman') {
+                    alert('请找准自己的位置');
+                    return;
+                }
+                if (userType === 'B' && role !== 'herManservant') {
+                    alert('请找准自己的位置');
+                    return;
+                }
+                
+                setUserRole(role);
+                setStep('reading');
+            };
+
+            // 修复文本选择处理
+            const handleTextSelection = (e) => {
+                // 防止事件冒泡导致的问题
+                if (e) e.stopPropagation();
+                
+                const windowSelection = window.getSelection();
+                
+                if (!windowSelection || windowSelection.rangeCount === 0) {
+                    setSelection(null);
+                    setToolbarPosition(null);
+                    return;
+                }
+
+                const range = windowSelection.getRangeAt(0);
+                const selectedText = range.toString().trim();
+                
+                // 检查是否选择了过多内容（可能是BUG导致的全选）
+                if (!selectedText || selectedText.length < 2 || selectedText.length > 500) {
+                    setSelection(null);
+                    setToolbarPosition(null);
+                    // 如果选择了太多内容，清除选择
+                    if (selectedText.length > 500) {
+                        windowSelection.removeAllRanges();
+                    }
+                    return;
+                }
+
+                // 更精确地查找段落元素
+                let paragraph = null;
+                
+                // 方法1：从事件目标查找
+                if (e?.target?.closest) {
+                    paragraph = e.target.closest('.selectable-paragraph');
+                }
+                
+                // 方法2：从选择范围查找
+                if (!paragraph && range.startContainer) {
+                    let node = range.startContainer.nodeType === Node.TEXT_NODE 
+                        ? range.startContainer.parentElement 
+                        : range.startContainer;
+                    
+                    while (node && node !== document.body) {
+                        if (node.classList && node.classList.contains('selectable-paragraph')) {
+                            paragraph = node;
+                            break;
+                        }
+                        node = node.parentElement;
+                    }
+                }
+                    
+                if (!paragraph) {
+                    console.warn('无法找到段落容器');
+                    setSelection(null);
+                    setToolbarPosition(null);
+                    return;
+                }
+
+                // 获取段落的纯文本内容（排除标注指示器）
+                const getPlainText = (element) => {
+                    let plainText = '';
+                    const walker = document.createTreeWalker(
+                        element,
+                        NodeFilter.SHOW_TEXT,
+                        {
+                            acceptNode: (node) => {
+                                // 跳过标注指示器内的文本
+                                if (node.parentElement?.classList?.contains('annotation-indicator')) {
+                                    return NodeFilter.FILTER_REJECT;
+                                }
+                                return NodeFilter.FILTER_ACCEPT;
+                            }
+                        }
+                    );
+                    
+                    let textNode;
+                    while (textNode = walker.nextNode()) {
+                        plainText += textNode.textContent;
+                    }
+                    return plainText;
+                };
+
+                const paragraphPlainText = getPlainText(paragraph);
+                
+                // 更精确的文本匹配
+                const startOffset = paragraphPlainText.indexOf(selectedText);
+                
+                if (startOffset === -1) {
+                    // 尝试清理空白字符后再匹配
+                    const cleanSelectedText = selectedText.replace(/\s+/g, ' ');
+                    const cleanParagraphText = paragraphPlainText.replace(/\s+/g, ' ');
+                    const cleanStartOffset = cleanParagraphText.indexOf(cleanSelectedText);
+                    
+                    if (cleanStartOffset === -1) {
+                        console.warn('无法在段落中找到选中文字:', selectedText);
+                        setSelection(null);
+                        setToolbarPosition(null);
+                        return;
+                    }
+                    
+                    // 使用清理后的偏移量
+                    setSelection({
+                        text: selectedText,
+                        startOffset: cleanStartOffset,
+                        endOffset: cleanStartOffset + cleanSelectedText.length,
+                        paragraphIndex: parseInt(paragraph.dataset.paragraphIndex)
+                    });
+                } else {
+                    setSelection({
+                        text: selectedText,
+                        startOffset,
+                        endOffset: startOffset + selectedText.length,
+                        paragraphIndex: parseInt(paragraph.dataset.paragraphIndex)
+                    });
+                }
+
+                // 计算工具栏位置
+                const rect = range.getBoundingClientRect();
+                const scrollY = window.scrollY;
+                
+                // 确保工具栏不会超出屏幕
+                const toolbarX = Math.min(
+                    Math.max(rect.left + (rect.width / 2), 100), 
+                    window.innerWidth - 100
+                );
+                
+                setToolbarPosition({
+                    x: toolbarX,
+                    y: rect.top + scrollY - 10
+                });
+                
+                console.log('文本选择成功:', selectedText.substring(0, 50) + (selectedText.length > 50 ? '...' : ''));
+            };
+
+            const handleCreateAnnotation = async (type, content) => {
+                if (!selection) return;
+
+                const annotation = {
+                    chapterId: 'chapter-1',
+                    selectedText: selection.text,
+                    range: {
+                        paragraphIndex: selection.paragraphIndex,
+                        startOffset: selection.startOffset,
+                        endOffset: selection.endOffset
+                    },
+                    author: userRole,
+                    type,
+                    content,
+                    readBy: [userRole]
+                };
+
+                await syncManager.addAnnotation(annotation);
+                closeAllModals();
+            };
+
+            const closeAllModals = () => {
+                setSelection(null);
+                setToolbarPosition(null);
+                setShowCommentModal(false);
+                setShowVoiceModal(false);
+                setCommentDetail(null);
+                setVoiceState('idle');
+                setRecordingTime(0);
+                setAudioBlob(null);
+                setAudioUrl(null);
+                window.getSelection()?.removeAllRanges();
+            };
+
+            // 语音录制功能
+            const startRecording = async () => {
+                try {
+                    // 检查媒体设备支持
+                    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                        alert('您的设备不支持语音录制功能');
+                        return;
+                    }
+
+                    // 移动端和桌面端兼容的音频配置
+                    const audioConstraints = {
+                        audio: {
+                            echoCancellation: true,
+                            noiseSuppression: true,
+                            autoGainControl: true
+                        }
+                    };
+
+                    // 桌面端添加更高质量设置
+                    if (!navigator.userAgent.match(/Mobile|Android|iPhone|iPad/)) {
+                        audioConstraints.audio.sampleRate = 44100;
+                    }
+
+                    const stream = await navigator.mediaDevices.getUserMedia(audioConstraints);
+
+                    const mediaRecorder = new MediaRecorder(stream, {
+                        mimeType: 'audio/webm;codecs=opus'
+                    });
+
+                    mediaRecorderRef.current = mediaRecorder;
+                    const chunks = [];
+
+                    mediaRecorder.ondataavailable = (event) => {
+                        if (event.data.size > 0) {
+                            chunks.push(event.data);
+                        }
+                    };
+
+                    mediaRecorder.onstop = () => {
+                        const blob = new Blob(chunks, { type: 'audio/webm;codecs=opus' });
+                        setAudioBlob(blob);
+                        
+                        const url = URL.createObjectURL(blob);
+                        setAudioUrl(url);
+                        setVoiceState('recorded');
+                        
+                        stream.getTracks().forEach(track => track.stop());
+                    };
+
+                    mediaRecorder.start(1000);
+                    setVoiceState('recording');
+                    setRecordingTime(0);
+                    
+                    timerRef.current = setInterval(() => {
+                        setRecordingTime(prev => {
+                            if (prev >= 180) {
+                                stopRecording();
+                                return 180;
+                            }
+                            return prev + 1;
+                        });
+                    }, 1000);
+
+                } catch (error) {
+                    console.error('Failed to start recording:', error);
+                    alert('无法访问麦克风，请检查权限设置');
+                }
+            };
+
+            const stopRecording = () => {
+                if (mediaRecorderRef.current && voiceState === 'recording') {
+                    mediaRecorderRef.current.stop();
+                    if (timerRef.current) {
+                        clearInterval(timerRef.current);
+                        timerRef.current = null;
+                    }
+                }
+            };
+
+            const submitVoice = async () => {
+                if (audioBlob) {
+                    await handleCreateAnnotation('voice', audioBlob);
+                }
+            };
+
+            const formatTime = (seconds) => {
+                const mins = Math.floor(seconds / 60);
+                const secs = seconds % 60;
+                return `${mins}:${secs.toString().padStart(2, '0')}`;
+            };
+
+            const handleAnnotationClick = (annotation, event) => {
+                event.stopPropagation();
+                
+                if (annotation.type === 'comment' || annotation.type === 'voice') {
+                    const rect = event.target.getBoundingClientRect();
+                    const scrollY = window.scrollY;
+                    
+                    setCommentDetail({
+                        annotation,
+                        position: {
+                            x: rect.right,
+                            y: rect.top + scrollY
+                        }
+                    });
+                }
+            };
+
+            // 渲染文字标注的逻辑（与之前相同）
+            const renderTextWithAnnotations = (text, paragraphIndex) => {
+                const paragraphAnnotations = annotations.filter(a => a.range.paragraphIndex === paragraphIndex);
+                
+                if (paragraphAnnotations.length === 0) {
+                    return text;
+                }
+
+                const charMap = new Array(text.length).fill(null).map(() => ({
+                    annotations: [],
+                    text: ''
+                }));
+
+                paragraphAnnotations.forEach(annotation => {
+                    const { startOffset, endOffset } = annotation.range;
+                    for (let i = startOffset; i < endOffset && i < text.length; i++) {
+                        charMap[i].annotations.push(annotation);
+                        charMap[i].text = text[i];
+                    }
+                });
+
+                const segments = [];
+                let i = 0;
+
+                while (i < text.length) {
+                    const currentAnnotations = charMap[i].annotations;
+                    
+                    if (currentAnnotations.length === 0) {
+                        let textSegment = '';
+                        while (i < text.length && charMap[i].annotations.length === 0) {
+                            textSegment += text[i];
+                            i++;
+                        }
+                        segments.push(textSegment);
+                    } else {
+                        let textSegment = '';
+                        const annotationIds = currentAnnotations.map(a => a._id).sort();
+                        
+                        while (i < text.length) {
+                            const currentIds = charMap[i].annotations.map(a => a._id).sort();
+                            if (JSON.stringify(currentIds) !== JSON.stringify(annotationIds)) {
+                                break;
+                            }
+                            textSegment += text[i];
+                            i++;
+                        }
+
+                        const hasUserA = currentAnnotations.some(a => a.author === 'worldsMostBeautifulWoman');
+                        const hasUserB = currentAnnotations.some(a => a.author === 'herManservant');
+                        
+                        let combinedClass = '';
+                        let backgroundStyle = {};
+                        
+                        if (hasUserA && hasUserB) {
+                            combinedClass = 'cursor-pointer relative inline-block';
+                            backgroundStyle = {
+                                background: 'linear-gradient(45deg, rgba(224, 99, 47, 0.4) 50%, rgba(173, 216, 230, 0.4) 50%)',
+                                backgroundSize: '8px 8px'
+                            };
+                        } else if (hasUserA) {
+                            combinedClass = 'highlight-user-a cursor-pointer relative inline-block';
+                        } else if (hasUserB) {
+                            combinedClass = 'highlight-user-b cursor-pointer relative inline-block';
+                        }
+
+                        const primaryAnnotation = currentAnnotations[0];
+                        
+                        segments.push(
+                            React.createElement('span', {
+                                key: `segment-${segments.length}`,
+                                className: combinedClass,
+                                style: backgroundStyle,
+                                onClick: (e) => handleAnnotationClick(primaryAnnotation, e)
+                            }, [
+                                textSegment,
+                                React.createElement('span', {
+                                    key: 'indicator',
+                                    className: 'annotation-indicator',
+                                    title: getAnnotationTitle(primaryAnnotation)
+                                }, getAnnotationIndicator(primaryAnnotation))
+                            ])
+                        );
+                    }
+                }
+
+                return segments;
+            };
+
+            const getAnnotationIndicator = (annotation) => {
+                switch (annotation.type) {
+                    case 'reaction':
+                        return reactions.find(([emoji, content]) => content === annotation.content)?.[0] || '🤔';
+                    case 'deferred': return '💌';
+                    case 'comment': return '💬';
+                    case 'voice': return '🎵';
+                }
+                return '';
+            };
+
+            const getAnnotationTitle = (annotation) => {
+                switch (annotation.type) {
+                    case 'reaction': return `表情: ${annotation.content}`;
+                    case 'deferred': return '回信';
+                    case 'comment': return '点击查看评论';
+                    case 'voice': return '点击播放语音';
+                }
+                return '';
+            };
+
+            if (step === 'loading') {
+                return React.createElement('div', {
+                    className: "min-h-screen flex items-center justify-center bg-gray-50"
+                }, React.createElement('div', {
+                    className: "text-center"
+                }, [
+                    React.createElement('div', {
+                        key: 'spinner',
+                        className: "animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"
+                    }),
+                    React.createElement('p', {
+                        key: 'loading-text',
+                        className: "text-gray-600 text-lg"
+                    }, '正在初始化 LeanCloud 同步系统...')
+                ]));
+            }
+
+            if (step === 'password') {
+                return React.createElement('div', {
+                    className: "min-h-screen flex items-center justify-center bg-gray-50 px-4"
+                }, React.createElement('div', {
+                    className: "max-w-md w-full space-y-8"
+                }, [
+                    React.createElement('div', {
+                        key: 'header',
+                        className: "text-center"
+                    }, [
+                        React.createElement('h1', {
+                            key: 'title',
+                            className: "text-3xl font-bold text-gray-900 mb-2"
+                        }, "我们的读书角落"),
+                        React.createElement('p', {
+                            key: 'subtitle',
+                            className: "text-gray-600 mb-4"
+                        }, "请输入密码进入专属空间"),
+                        React.createElement('div', {
+                            key: 'sync-status',
+                            className: `p-2 rounded-lg text-sm ${syncMode === 'cloud' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}`
+                        }, syncMode === 'cloud' ? '☁️ LeanCloud 轮询同步已启用' : '📱 本地增强同步模式'),
+                        React.createElement('div', {
+                            key: 'config-notice',
+                            className: "mt-2 p-2 rounded-lg text-xs bg-yellow-50 text-yellow-800"
+                        }, LEANCLOUD_CONFIG.appId === 'your-app-id' ? '⚠️ 需要配置 LeanCloud 参数以启用云端同步' : '✅ LeanCloud 配置完成')
+                    ]),
+                    React.createElement('div', {
+                        key: 'form',
+                        className: "space-y-4"
+                    }, [
+                        React.createElement('input', {
+                            key: 'input',
+                            type: "password",
+                            placeholder: "请输入密码",
+                            className: "w-full px-4 py-3 border rounded-lg text-center text-lg focus:outline-none focus:ring-2 focus:ring-blue-500",
+                            onKeyPress: (e) => {
+                                if (e.key === 'Enter') {
+                                    handlePassword(e.target.value);
+                                }
+                            }
+                        }),
+                        React.createElement('p', {
+                            key: 'hint',
+                            className: "text-sm text-gray-500 text-center"
+                        }, "测试密码: 021117 或 000726")
+                    ])
+                ]));
+            }
+
+            if (step === 'role') {
+                return React.createElement('div', {
+                    className: "min-h-screen flex items-center justify-center bg-gray-50 px-4"
+                }, React.createElement('div', {
+                    className: "max-w-lg w-full space-y-8"
+                }, [
+                    React.createElement('div', {
+                        key: 'header',
+                        className: "text-center"
+                    }, React.createElement('h1', {
+                        className: "text-3xl font-bold text-gray-900 mb-4"
+                    }, "欢迎来到我们的读书角落")),
+                    React.createElement('div', {
+                        key: 'buttons',
+                        className: "space-y-3"
+                    }, [
+                        React.createElement('button', {
+                            key: 'woman',
+                            onClick: () => handleRole('worldsMostBeautifulWoman'),
+                            className: `w-full py-4 px-6 rounded-lg font-medium text-lg transition-all duration-200 ${
+                                userType === 'A' 
+                                    ? 'bg-orange-100 text-orange-800 border-2 border-orange-300 hover:bg-orange-200' 
+                                    : 'bg-gray-200 text-gray-400 cursor-not-allowed opacity-60'
+                            }`
+                        }, "🌸 世上最美的女人"),
+                        React.createElement('button', {
+                            key: 'servant',
+                            onClick: () => handleRole('herManservant'),
+                            className: `w-full py-4 px-6 rounded-lg font-medium text-lg transition-all duration-200 ${
+                                userType === 'B' 
+                                    ? 'bg-blue-100 text-blue-800 border-2 border-blue-300 hover:bg-blue-200' 
+                                    : 'bg-gray-200 text-gray-400 cursor-not-allowed opacity-60'
+                            }`
+                        }, "🛡️ 她的男仆")
+                    ])
+                ]));
+            }
+
+            if (step === 'reading') {
+                const paragraphs = [
+                    "这是一个关于两个人的故事。她，是世上最美的女人；他，是她忠诚的男仆。",
+                    "在这个数字化的阅读角落里，他们开始了一段特别的共读时光。每一个标注，每一次互动，都承载着两颗心之间的默契与温柔。",
+                    "这里没有其他人，只有她和他。在文字的世界里，他们可以自由地表达内心最真实的感受，分享彼此的思考与感悟。现在所有的标注都会实时同步，无论在哪个设备上。"
+                ];
+
+                return React.createElement('div', {
+                    className: "min-h-screen bg-gray-50",
+                    onClick: () => setCommentDetail(null)
+                }, [
+                    // 头部
+                    React.createElement('header', {
+                        key: 'header',
+                        className: "bg-white shadow-sm border-b sticky top-0 z-10"
+                    }, React.createElement('div', {
+                        className: "max-w-4xl mx-auto px-4 py-3"
+                    }, React.createElement('div', {
+                        className: "flex items-center justify-between"
+                    }, [
+                        React.createElement('h1', {
+                            key: 'title',
+                            className: "text-xl font-semibold text-gray-900"
+                        }, "我们的读书角落"),
+                        React.createElement('div', {
+                            key: 'user-info',
+                            className: "flex items-center space-x-2"
+                        }, [
+                            React.createElement('div', {
+                                key: 'user-badge',
+                                className: `px-3 py-1 rounded-full text-sm font-medium ${
+                                    userRole === 'worldsMostBeautifulWoman' 
+                                        ? 'bg-orange-100 text-orange-800' 
+                                        : 'bg-blue-100 text-blue-800'
+                                }`
+                            }, userRole === 'worldsMostBeautifulWoman' ? '🌸 最美女人' : '🛡️ 男仆'),
+                            React.createElement('div', {
+                                key: 'sync-status',
+                                className: `px-2 py-1 rounded-full text-xs ${syncMode === 'cloud' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`
+                            }, syncMode === 'cloud' ? '☁️ 云端' : '📱 本地')
+                        ])
+                    ]))),
+                    
+                    // 主要内容
+                    React.createElement('main', {
+                        key: 'main',
+                        className: "max-w-4xl mx-auto px-4 py-8"
+                    }, React.createElement('div', {
+                        className: "space-y-8"
+                    }, [
+                        React.createElement('header', {
+                            key: 'chapter-header',
+                            className: "text-center border-b pb-6"
+                        }, React.createElement('h1', {
+                            className: "text-3xl font-bold text-gray-900 mb-2"
+                        }, "第一章：相遇")),
+                        
+                        React.createElement('div', {
+                            key: 'content',
+                            className: "prose prose-lg max-w-none"
+                        }, [
+                            ...paragraphs.map((text, index) => 
+                                React.createElement('p', {
+                                    key: `paragraph-${index}`,
+                                    className: "mb-8 leading-8 text-lg text-gray-800 select-text cursor-text selectable-paragraph relative",
+                                    'data-paragraph-index': index,
+                                    onMouseUp: handleTextSelection,
+                                    onTouchEnd: handleTextSelection
+                                }, renderTextWithAnnotations(text, index))
+                            ),
+                            
+                            React.createElement('div', {
+                                key: 'status-info',
+                                className: "mt-12 p-4 bg-green-50 rounded-lg"
+                            }, [
+                                React.createElement('h3', {
+                                    key: 'status-title',
+                                    className: "font-semibold mb-2"
+                                }, `${syncMode === 'cloud' ? '☁️' : '📱'} LeanCloud 同步状态`),
+                                React.createElement('ul', {
+                                    key: 'status-list',
+                                    className: "text-sm space-y-1"
+                                }, [
+                                    React.createElement('li', { key: 'mode' }, `🔄 同步模式: ${syncMode === 'cloud' ? 'LeanCloud云端轮询同步' : '本地增强同步'}`),
+                                    React.createElement('li', { key: 'annotations' }, `📝 当前标注: ${annotations.length} 条`),
+                                    React.createElement('li', { key: 'voice' }, "🎙️ 语音录制: 3分钟录音支持"),
+                                    React.createElement('li', { key: 'storage' }, syncMode === 'cloud' ? "💾 云端语音存储" : "💾 本地语音存储"),
+                                    React.createElement('li', { key: 'realtime' }, syncMode === 'cloud' ? "⚡ 轮询更新: 每3秒检查云端变化" : "⚡ 实时更新: 跨设备标注即时同步")
+                                ])
+                            ])
+                        ])
+                    ])),
+                    
+                    // 标注工具栏
+                    toolbarPosition && React.createElement('div', {
+                        key: 'toolbar',
+                        className: "annotation-toolbar",
+                        style: {
+                            left: `${toolbarPosition.x}px`,
+                            top: `${toolbarPosition.y}px`,
+                            transform: 'translate(-50%, -100%)'
+                        }
+                    }, React.createElement('div', {
+                        className: "flex flex-wrap items-center gap-1 max-w-xs"
+                    }, [
+                        ...reactions.map(([emoji, content]) =>
+                            React.createElement('button', {
+                                key: content,
+                                onClick: () => handleCreateAnnotation('reaction', content),
+                                className: "p-1 rounded hover:bg-gray-100 transition-colors text-lg",
+                                title: content
+                            }, emoji)
+                        ),
+                        React.createElement('div', {
+                            key: 'divider',
+                            className: "w-full h-px bg-gray-300 my-1"
+                        }),
+                        React.createElement('button', {
+                            key: 'deferred',
+                            onClick: () => handleCreateAnnotation('deferred', '回信'),
+                            className: "p-2 rounded-md hover:bg-gray-100 transition-colors text-xl",
+                            title: "回信"
+                        }, '💌'),
+                        React.createElement('button', {
+                            key: 'comment',
+                            onClick: () => setShowCommentModal(true),
+                            className: "p-2 rounded-md hover:bg-gray-100 transition-colors text-xl",
+                            title: "评论"
+                        }, '💬'),
+                        React.createElement('button', {
+                            key: 'voice',
+                            onClick: () => setShowVoiceModal(true),
+                            className: "p-2 rounded-md hover:bg-gray-100 transition-colors text-xl",
+                            title: "语音"
+                        }, '🎙️')
+                    ])),
+                    
+                    // 遮罩层
+                    (toolbarPosition || showCommentModal || showVoiceModal) && React.createElement('div', {
+                        key: 'overlay',
+                        className: "fixed inset-0 z-30",
+                        onClick: closeAllModals
+                    }),
+                    
+                    // 评论模态框
+                    showCommentModal && React.createElement('div', {
+                        key: 'comment-modal',
+                        className: "fixed inset-0 bg-black bg-opacity-50 flex items-end justify-center z-50 p-4"
+                    }, React.createElement('div', {
+                        className: "bg-white rounded-t-xl w-full max-w-lg"
+                    }, [
+                        React.createElement('div', {
+                            key: 'modal-header',
+                            className: "flex items-center justify-between p-4 border-b"
+                        }, [
+                            React.createElement('h3', { key: 'title', className: "text-lg font-semibold" }, "添加评论"),
+                            React.createElement('button', { key: 'close', onClick: closeAllModals, className: "text-2xl" }, '×')
+                        ]),
+                        React.createElement('div', {
+                            key: 'modal-body', className: "p-4"
+                        }, [
+                            React.createElement('textarea', {
+                                key: 'textarea',
+                                id: 'comment-text',
+                                placeholder: "输入你的想法...",
+                                className: "w-full h-32 p-3 border rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            }),
+                            React.createElement('div', { key: 'buttons', className: "flex justify-end space-x-2 mt-4" }, [
+                                React.createElement('button', { key: 'cancel', onClick: closeAllModals, className: "px-4 py-2 text-gray-600" }, "取消"),
+                                React.createElement('button', {
+                                    key: 'submit',
+                                    onClick: () => {
+                                        const content = document.getElementById('comment-text').value.trim();
+                                        if (content) handleCreateAnnotation('comment', content);
+                                    },
+                                    className: "px-6 py-2 bg-blue-600 text-white rounded-lg"
+                                }, "提交")
+                            ])
+                        ])
+                    ])),
+
+                    // 语音模态框
+                    showVoiceModal && React.createElement('div', {
+                        key: 'voice-modal',
+                        className: "fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+                    }, React.createElement('div', {
+                        className: "bg-white rounded-xl p-6 max-w-sm w-full"
+                    }, [
+                        React.createElement('h3', { key: 'title', className: "text-lg font-semibold mb-4 text-center" }, "语音录制"),
+                        React.createElement('div', { key: 'content', className: "text-center" }, [
+                            React.createElement('div', {
+                                key: 'icon',
+                                className: `w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 ${
+                                    voiceState === 'recording' ? 'bg-red-100 recording-pulse' : 
+                                    voiceState === 'recorded' ? 'bg-green-100' : 'bg-gray-100'
+                                }`
+                            }, React.createElement('span', { className: 'text-2xl' }, 
+                                voiceState === 'recording' ? '🎙️' : voiceState === 'recorded' ? '✅' : '🎤')),
+                            React.createElement('div', { key: 'time', className: 'text-xl font-mono mb-4' }, formatTime(recordingTime)),
+                            voiceState === 'idle' && React.createElement('button', {
+                                key: 'start',
+                                onClick: startRecording,
+                                className: "px-6 py-2 bg-red-600 text-white rounded-lg mr-2"
+                            }, "开始录音"),
+                            voiceState === 'recording' && React.createElement('button', {
+                                key: 'stop',
+                                onClick: stopRecording,
+                                className: "px-6 py-2 bg-gray-600 text-white rounded-lg mr-2"
+                            }, "停止录音"),
+                            voiceState === 'recorded' && audioUrl && [
+                                React.createElement('audio', { key: 'player', src: audioUrl, controls: true, className: 'mb-4 w-full' }),
+                                React.createElement('div', { key: 'buttons', className: 'space-x-2' }, [
+                                    React.createElement('button', { key: 'retry', onClick: () => {
+                                        setVoiceState('idle'); setRecordingTime(0); setAudioUrl(null);
+                                    }, className: "px-4 py-2 text-gray-600" }, "重录"),
+                                    React.createElement('button', { key: 'submit', onClick: submitVoice, className: "px-6 py-2 bg-blue-600 text-white rounded-lg" }, "提交")
+                                ])
+                            ],
+                            React.createElement('button', { key: 'close', onClick: closeAllModals, className: "px-4 py-2 text-gray-600 mt-4 block mx-auto" }, "关闭")
+                        ])
+                    ])),
+                    
+                    // 评论详情弹窗
+                    commentDetail && React.createElement('div', {
+                        key: 'comment-detail',
+                        className: "comment-detail-popup",
+                        style: {
+                            left: `${Math.min(commentDetail.position.x, window.innerWidth - 320)}px`,
+                            top: `${commentDetail.position.y}px`
+                        },
+                        onClick: (e) => e.stopPropagation()
+                    }, [
+                        React.createElement('div', { key: 'header', className: "flex items-center justify-between mb-2" }, [
+                            React.createElement('span', { key: 'author', className: `text-sm font-medium ${
+                                commentDetail.annotation.author === 'worldsMostBeautifulWoman' ? 'text-orange-700' : 'text-blue-700'
+                            }` }, commentDetail.annotation.author === userRole ? '你' : 
+                                commentDetail.annotation.author === 'worldsMostBeautifulWoman' ? '世上最美的女人' : '她的男仆'),
+                            React.createElement('button', { key: 'close', onClick: () => setCommentDetail(null), className: "text-gray-400" }, '×')
+                        ]),
+                        commentDetail.annotation.type === 'comment' && React.createElement('div', { key: 'content', className: "text-gray-800" }, commentDetail.annotation.content),
+                        commentDetail.annotation.type === 'voice' && React.createElement('audio', {
+                            key: 'voice', 
+                            src: commentDetail.annotation.content, 
+                            controls: true, 
+                            preload: 'metadata',
+                            className: "w-full h-8 mt-2"
+                        })
+                    ])
+                ]);
+            }
+
+            return null;
+        }
+
+        // 页面卸载时清理资源
+        window.onbeforeunload = () => {
+            if (syncManager.liveQuery) {
+                syncManager.liveQuery.unsubscribe();
+            }
+            if (syncManager.cloudSyncInterval) {
+                clearInterval(syncManager.cloudSyncInterval);
+            }
+            if (syncManager.syncInterval) {
+                clearInterval(syncManager.syncInterval);
+            }
+        };
+
+        ReactDOM.render(React.createElement(App), document.getElementById('root'));
+    </script>
+</body>
+</html>

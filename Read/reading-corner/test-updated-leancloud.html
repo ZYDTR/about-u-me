@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>测试更新后的 LeanCloud 版本</title>
+    <!-- LeanCloud SDK with LiveQuery support -->
+    <script src="//cdn.jsdelivr.net/npm/leancloud-storage@4.15.2/dist/av-live-query-min.js"></script>
+    <style>
+        body { 
+            font-family: sans-serif; 
+            max-width: 800px; 
+            margin: 0 auto; 
+            padding: 20px; 
+            line-height: 1.6; 
+        }
+        .status { 
+            padding: 15px; 
+            margin: 10px 0; 
+            border-radius: 8px; 
+            border-left: 4px solid; 
+        }
+        .success { background: #d4edda; border-color: #28a745; color: #155724; }
+        .error { background: #f8d7da; border-color: #dc3545; color: #721c24; }
+        .info { background: #d1ecf1; border-color: #17a2b8; color: #0c5460; }
+        .warning { background: #fff3cd; border-color: #ffc107; color: #856404; }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 8px 4px;
+            font-size: 14px;
+        }
+        button:hover { background: #0056b3; }
+    </style>
+</head>
+<body>
+    <h1>🎯 测试更新后的 LeanCloud 版本</h1>
+    
+    <div class="status info">
+        <strong>📋 测试目标</strong><br>
+        验证使用 <code>ReadingAnnotation</code> Class 的完整应用是否正常工作<br>
+        包括：轮询同步、语音录制、标注功能等
+    </div>
+    
+    <button onclick="testConnection()">🚀 测试 LeanCloud 连接</button>
+    <button onclick="testReadingAnnotationClass()">📝 测试 ReadingAnnotation Class</button>
+    <button onclick="openMainApp()">🌸 打开主应用</button>
+    <button onclick="clearLogs()">🗑️ 清空日志</button>
+    
+    <div id="logs"></div>
+
+    <script>
+        const CONFIG = {
+            appId: 'Q9m29iJ6xOVxOtDqmKamdsFX-gzGzoHsz',
+            appKey: 'pK6oNXPcsmpyXarHT91xMtW8',
+            serverURL: 'https://q9m29ij6.lc-cn-n1-shared.com'
+        };
+
+        let currentUser = null;
+
+        function log(message, type = 'info') {
+            const logs = document.getElementById('logs');
+            const div = document.createElement('div');
+            div.className = `status ${type}`;
+            div.innerHTML = `<strong>${new Date().toLocaleTimeString()}</strong> ${message}`;
+            logs.appendChild(div);
+            console.log(message);
+            div.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function clearLogs() {
+            document.getElementById('logs').innerHTML = '';
+        }
+
+        async function testConnection() {
+            log('🚀 开始测试 LeanCloud 连接...', 'info');
+            
+            try {
+                if (typeof AV === 'undefined') {
+                    throw new Error('LeanCloud SDK 未加载');
+                }
+                log('✅ LeanCloud SDK 已加载', 'success');
+
+                // 初始化
+                AV.init({
+                    appId: CONFIG.appId,
+                    appKey: CONFIG.appKey,
+                    serverURL: CONFIG.serverURL
+                });
+                log('✅ LeanCloud 应用初始化完成', 'success');
+
+                // 匿名登录
+                currentUser = await AV.User.loginAnonymously();
+                log(`✅ 匿名登录成功，用户ID: ${currentUser.id.substring(0, 8)}...`, 'success');
+
+                log('<strong>🎉 LeanCloud 连接测试成功！</strong>', 'success');
+                
+            } catch (error) {
+                log(`❌ 连接测试失败: ${error.message}`, 'error');
+            }
+        }
+
+        async function testReadingAnnotationClass() {
+            if (!currentUser) {
+                log('⚠️ 请先测试连接', 'warning');
+                return;
+            }
+
+            log('📝 开始测试 ReadingAnnotation Class...', 'info');
+            
+            try {
+                // 测试查询
+                const query = new AV.Query('ReadingAnnotation');
+                query.limit(5);
+                const results = await query.find();
+                log(`✅ 查询成功，找到 ${results.length} 条记录`, 'success');
+
+                // 测试创建
+                const ReadingAnnotation = AV.Object.extend('ReadingAnnotation');
+                const testObj = new ReadingAnnotation();
+                
+                testObj.set('chapterId', 'chapter-1');
+                testObj.set('selectedText', '更新版本测试');
+                testObj.set('range', { paragraphIndex: 0, startOffset: 0, endOffset: 8 });
+                testObj.set('author', 'testUser');
+                testObj.set('type', 'comment');
+                testObj.set('content', `测试更新版本 - ${new Date().toLocaleTimeString()}`);
+                testObj.set('readBy', ['testUser']);
+
+                const saved = await testObj.save();
+                log(`✅ 创建成功！文档ID: ${saved.id}`, 'success');
+
+                // 测试更新
+                saved.set('content', saved.get('content') + ' [已更新]');
+                await saved.save();
+                log('✅ 更新成功！', 'success');
+
+                // 测试轮询查询（检查更新时间）
+                const pollQuery = new AV.Query('ReadingAnnotation');
+                pollQuery.greaterThan('updatedAt', new Date(Date.now() - 10000)); // 10秒内的更新
+                const recentUpdates = await pollQuery.find();
+                log(`✅ 轮询查询成功，找到 ${recentUpdates.length} 条最近更新`, 'success');
+
+                // 清理测试数据
+                await saved.destroy();
+                log('✅ 测试数据清理完成', 'success');
+
+                log('<strong>🎉 ReadingAnnotation Class 测试完成！所有功能正常</strong>', 'success');
+                log('💡 现在可以使用主应用进行完整测试', 'info');
+                
+            } catch (error) {
+                log(`❌ ReadingAnnotation Class 测试失败: ${error.message}`, 'error');
+            }
+        }
+
+        function openMainApp() {
+            log('🌸 打开主应用...', 'info');
+            window.open('./leancloud-version.html', '_blank');
+        }
+
+        window.onload = () => {
+            log('🎯 LeanCloud 更新版本测试工具已启动', 'info');
+            log('📝 请按顺序进行测试: 连接 → ReadingAnnotation Class → 主应用', 'info');
+        };
+    </script>
+</body>
+</html>

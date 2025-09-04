@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CloudBase 连接测试</title>
+    <script src="https://imgcache.qq.com/qcloud/tcbjs/1.10.10/tcb.js"></script>
+    <style>
+        body { 
+            font-family: sans-serif; 
+            max-width: 600px; 
+            margin: 0 auto; 
+            padding: 20px; 
+            line-height: 1.6; 
+        }
+        .status { 
+            padding: 15px; 
+            margin: 10px 0; 
+            border-radius: 8px; 
+            border-left: 4px solid; 
+        }
+        .success { background: #d4edda; border-color: #28a745; color: #155724; }
+        .error { background: #f8d7da; border-color: #dc3545; color: #721c24; }
+        .info { background: #d1ecf1; border-color: #17a2b8; color: #0c5460; }
+        .warning { background: #fff3cd; border-color: #ffc107; color: #856404; }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 8px 4px;
+        }
+        button:hover { background: #0056b3; }
+        pre { 
+            background: #f8f9fa; 
+            padding: 10px; 
+            border-radius: 5px; 
+            overflow-x: auto; 
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 CloudBase 连接测试</h1>
+    
+    <div class="status info">
+        <strong>📋 当前配置</strong><br>
+        环境ID: <code>cloud1-8gh2sxjl6e6502fc</code><br>
+        当前域名: <code id="currentDomain"></code><br>
+        时间: <span id="currentTime"></span>
+    </div>
+    
+    <button onclick="testConnection()">🚀 开始测试</button>
+    <button onclick="testSync()">🔄 测试同步</button>
+    <button onclick="clearLogs()">🗑️ 清空日志</button>
+    
+    <div id="logs"></div>
+
+    <script>
+        const ENV_ID = 'cloud1-8gh2sxjl6e6502fc';
+        let app = null;
+        let db = null;
+
+        // 显示当前信息
+        document.getElementById('currentDomain').textContent = window.location.host;
+        document.getElementById('currentTime').textContent = new Date().toLocaleString();
+
+        function log(message, type = 'info') {
+            const logs = document.getElementById('logs');
+            const div = document.createElement('div');
+            div.className = `status ${type}`;
+            div.innerHTML = `<strong>${new Date().toLocaleTimeString()}</strong> ${message}`;
+            logs.appendChild(div);
+            console.log(message);
+            
+            // 自动滚动到底部
+            div.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function clearLogs() {
+            document.getElementById('logs').innerHTML = '';
+        }
+
+        async function testConnection() {
+            log('🔍 开始 CloudBase 连接测试...', 'info');
+
+            try {
+                // 1. 检查 SDK
+                if (typeof tcb === 'undefined') {
+                    throw new Error('CloudBase SDK 未加载');
+                }
+                log('✅ CloudBase SDK 已加载', 'success');
+
+                // 2. 初始化应用
+                app = tcb.init({
+                    env: ENV_ID,
+                    timeout: 30000,
+                    region: 'ap-shanghai'
+                });
+                log('✅ CloudBase 应用初始化成功', 'success');
+
+                // 3. 匿名认证
+                const auth = app.auth();
+                log('🔐 正在进行匿名认证...', 'info');
+                
+                const loginState = await auth.anonymousAuthProvider().signIn();
+                log(`✅ 匿名认证成功！用户ID: ${loginState.user.uid}`, 'success');
+
+                // 4. 测试数据库连接
+                db = app.database();
+                log('📁 正在测试数据库连接...', 'info');
+                
+                const result = await db.collection('annotations').limit(1).get();
+                log(`✅ 数据库连接成功！集合中有 ${result.data.length} 条记录`, 'success');
+
+                // 5. 写入测试数据
+                const testData = {
+                    test: true,
+                    message: '连接测试',
+                    domain: window.location.host,
+                    timestamp: new Date(),
+                    userAgent: navigator.userAgent.substring(0, 50) + '...'
+                };
+
+                const addResult = await db.collection('annotations').add(testData);
+                log(`✅ 测试数据写入成功！文档ID: ${addResult.id}`, 'success');
+
+                log('<pre>🎉 所有测试通过！CloudBase 配置正确，可以正常使用跨设备同步功能。</pre>', 'success');
+
+            } catch (error) {
+                log(`❌ 连接失败: ${error.message}`, 'error');
+                
+                // 提供详细的错误诊断
+                if (error.message.includes('SDK')) {
+                    log('💡 请检查网络连接，CloudBase SDK 可能无法加载', 'warning');
+                } else if (error.message.includes('unauthorized')) {
+                    log('💡 请检查 CloudBase 控制台的域名白名单配置', 'warning');
+                } else if (error.message.includes('timeout')) {
+                    log('💡 连接超时，请检查网络环境或重试', 'warning');
+                } else {
+                    log('💡 请检查环境ID是否正确，以及匿名登录是否已开启', 'warning');
+                }
+                
+                log(`<pre>错误详情: ${JSON.stringify(error, null, 2)}</pre>`, 'error');
+            }
+        }
+
+        async function testSync() {
+            if (!db) {
+                log('⚠️ 请先完成连接测试', 'warning');
+                return;
+            }
+
+            try {
+                log('🔄 开始测试实时同步...', 'info');
+
+                // 监听数据变化
+                const watcher = db.collection('annotations')
+                    .where({ test: true })
+                    .watch({
+                        onChange: (snapshot) => {
+                            log(`📡 收到实时更新！${snapshot.docs.length} 条记录`, 'success');
+                            const latest = snapshot.docs[snapshot.docs.length - 1];
+                            if (latest && latest.data.domain !== window.location.host) {
+                                log(`🌐 跨设备同步成功！来自: ${latest.data.domain}`, 'success');
+                            }
+                        },
+                        onError: (error) => {
+                            log(`❌ 实时监听错误: ${error.message}`, 'error');
+                        }
+                    });
+
+                log('✅ 实时监听已启动', 'success');
+                log('📱 现在可以在其他设备上打开此页面并点击"测试同步"按钮', 'info');
+
+                // 3秒后创建测试数据
+                setTimeout(async () => {
+                    try {
+                        await db.collection('annotations').add({
+                            test: true,
+                            message: '同步测试',
+                            domain: window.location.host,
+                            timestamp: new Date(),
+                            syncTest: Math.random()
+                        });
+                        log('📝 已创建同步测试数据', 'info');
+                    } catch (error) {
+                        log(`❌ 创建测试数据失败: ${error.message}`, 'error');
+                    }
+                }, 3000);
+
+            } catch (error) {
+                log(`❌ 同步测试失败: ${error.message}`, 'error');
+            }
+        }
+
+        // 页面加载时显示环境信息
+        window.onload = () => {
+            log('🚀 CloudBase 测试工具已启动', 'info');
+            log('📝 请先点击"开始测试"按钮验证连接', 'info');
+        };
+    </script>
+</body>
+</html>

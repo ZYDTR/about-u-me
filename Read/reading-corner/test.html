@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我们的读书角落 - 测试页面</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .highlight-user-a {
+            background-color: rgba(255, 192, 203, 0.3);
+        }
+        .highlight-user-b {
+            background-color: rgba(173, 216, 230, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // 简化版组件用于测试
+        function TestApp() {
+            const [step, setStep] = useState('password'); // password, role, reading
+            const [userRole, setUserRole] = useState(null);
+
+            const handlePassword = (password) => {
+                if (password === '021117' || password === '000726') {
+                    setStep('role');
+                } else {
+                    alert('密码错误');
+                }
+            };
+
+            const handleRole = (role) => {
+                setUserRole(role);
+                setStep('reading');
+            };
+
+            if (step === 'password') {
+                return (
+                    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+                        <div className="max-w-md w-full space-y-8">
+                            <div className="text-center">
+                                <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                                    我们的读书角落
+                                </h1>
+                                <p className="text-gray-600">请输入密码进入专属空间</p>
+                            </div>
+                            <div className="space-y-4">
+                                <input
+                                    type="password"
+                                    placeholder="请输入密码"
+                                    className="w-full px-4 py-3 border rounded-lg text-center text-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    onKeyPress={(e) => {
+                                        if (e.key === 'Enter') {
+                                            handlePassword(e.target.value);
+                                        }
+                                    }}
+                                />
+                                <p className="text-sm text-gray-500 text-center">
+                                    测试密码: 021117 或 000726
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
+
+            if (step === 'role') {
+                return (
+                    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+                        <div className="max-w-lg w-full space-y-8">
+                            <div className="text-center">
+                                <h1 className="text-3xl font-bold text-gray-900 mb-4">
+                                    欢迎来到我们的读书角落
+                                </h1>
+                            </div>
+                            <div className="space-y-3">
+                                <button
+                                    onClick={() => handleRole('worldsMostBeautifulWoman')}
+                                    className="w-full py-4 px-6 rounded-lg font-medium text-lg bg-pink-100 text-pink-800 border-2 border-pink-300 hover:bg-pink-200 transition-colors"
+                                >
+                                    🌸 世上最美的女人
+                                </button>
+                                <button
+                                    onClick={() => handleRole('herManservant')}
+                                    className="w-full py-4 px-6 rounded-lg font-medium text-lg bg-blue-100 text-blue-800 border-2 border-blue-300 hover:bg-blue-200 transition-colors"
+                                >
+                                    🛡️ 她的男仆
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
+
+            if (step === 'reading') {
+                return (
+                    <div className="min-h-screen bg-gray-50">
+                        <header className="bg-white shadow-sm border-b">
+                            <div className="max-w-4xl mx-auto px-4 py-3">
+                                <div className="flex items-center justify-between">
+                                    <h1 className="text-xl font-semibold text-gray-900">
+                                        我们的读书角落
+                                    </h1>
+                                    <div className={`px-3 py-1 rounded-full text-sm font-medium ${
+                                        userRole === 'worldsMostBeautifulWoman' 
+                                            ? 'bg-pink-100 text-pink-800' 
+                                            : 'bg-blue-100 text-blue-800'
+                                    }`}>
+                                        {userRole === 'worldsMostBeautifulWoman' ? '🌸 世上最美的女人' : '🛡️ 她的男仆'}
+                                    </div>
+                                </div>
+                            </div>
+                        </header>
+
+                        <main className="max-w-4xl mx-auto px-4 py-8">
+                            <div className="space-y-8">
+                                <header className="text-center border-b pb-6">
+                                    <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                                        第一章：相遇
+                                    </h1>
+                                </header>
+
+                                <div className="prose prose-lg max-w-none">
+                                    <p className="mb-6 leading-8 text-lg text-gray-800 select-text cursor-text">
+                                        这是一个关于两个人的故事。她，是世上最美的女人；他，是她忠诚的男仆。
+                                        <span className={`highlight-user-a cursor-pointer relative ml-1`}>
+                                            在这个数字化的阅读角落里
+                                            <span className="ml-1 text-xs">❤️</span>
+                                        </span>
+                                        ，他们开始了一段特别的共读时光。
+                                    </p>
+
+                                    <p className="mb-6 leading-8 text-lg text-gray-800 select-text cursor-text">
+                                        每一个标注，每一次互动，都承载着两颗心之间的默契与温柔。
+                                        <span className={`highlight-user-b cursor-pointer relative ml-1`}>
+                                            这里没有其他人，只有她和他
+                                            <span className="ml-1 text-xs">💬</span>
+                                        </span>
+                                        。在文字的世界里，他们可以自由地表达内心最真实的感受。
+                                    </p>
+
+                                    <div className="mt-8 p-4 bg-blue-50 rounded-lg">
+                                        <h3 className="font-semibold mb-2">功能演示：</h3>
+                                        <ul className="text-sm space-y-1">
+                                            <li>✅ 密码验证和角色选择</li>
+                                            <li>✅ 响应式布局设计</li>
+                                            <li>✅ 用户角色标识</li>
+                                            <li>✅ 文本高亮显示</li>
+                                            <li>✅ 标注类型图标</li>
+                                            <li>🔄 文本选择功能（需在实际开发环境中测试）</li>
+                                            <li>🔄 标注工具栏（需在实际开发环境中测试）</li>
+                                            <li>🔄 语音录制功能（需在实际开发环境中测试）</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </main>
+                    </div>
+                );
+            }
+
+            return null;
+        }
+
+        ReactDOM.render(<TestApp />, document.getElementById('root'));
+    </script>
+</body>
+</html>
