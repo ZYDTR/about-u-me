@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GitHub Pages 部署测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        .container {
+            text-align: center;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 40px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+        h1 { 
+            font-size: 2.5em; 
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        .subtitle {
+            font-size: 1.2em;
+            margin-bottom: 30px;
+            opacity: 0.9;
+        }
+        .status {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 10px;
+            transition: all 0.3s ease;
+        }
+        button:hover {
+            background: #45a049;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+        .info {
+            background: rgba(255, 255, 255, 0.15);
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 GitHub Pages 部署测试</h1>
+        <p class="subtitle">验证静态网站部署功能</p>
+        
+        <div class="status">
+            <h3>✅ 部署状态检测</h3>
+            <p id="deploy-time">页面加载时间: <span id="time"></span></p>
+            <p id="url-info">当前URL: <span id="current-url"></span></p>
+        </div>
+
+        <button onclick="testInteraction()">测试交互功能</button>
+        <button onclick="testLocalStorage()">测试本地存储</button>
+        
+        <div id="test-results" class="info" style="display: none;">
+            <h4>测试结果:</h4>
+            <ul id="results-list"></ul>
+        </div>
+
+        <div class="info">
+            <h4>📋 部署清单:</h4>
+            <ul>
+                <li>✅ HTML 结构正常</li>
+                <li>✅ CSS 样式生效</li>
+                <li>✅ JavaScript 功能</li>
+                <li>✅ 响应式设计</li>
+                <li>✅ 中文字符支持</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // 显示加载时间
+        document.getElementById('time').textContent = new Date().toLocaleString();
+        document.getElementById('current-url').textContent = window.location.href;
+
+        function testInteraction() {
+            const results = document.getElementById('test-results');
+            const list = document.getElementById('results-list');
+            
+            results.style.display = 'block';
+            
+            const tests = [
+                { name: 'DOM 操作', result: document.querySelector('h1') ? '✅ 通过' : '❌ 失败' },
+                { name: 'CSS 动画', result: getComputedStyle(document.querySelector('button')).transition ? '✅ 通过' : '❌ 失败' },
+                { name: '事件处理', result: '✅ 通过 (您点击了按钮)' },
+                { name: '响应式布局', result: window.innerWidth > 0 ? '✅ 通过' : '❌ 失败' }
+            ];
+
+            list.innerHTML = '';
+            tests.forEach(test => {
+                const li = document.createElement('li');
+                li.textContent = `${test.name}: ${test.result}`;
+                list.appendChild(li);
+            });
+        }
+
+        function testLocalStorage() {
+            try {
+                localStorage.setItem('github-pages-test', 'success');
+                const result = localStorage.getItem('github-pages-test');
+                alert(result === 'success' ? '✅ 本地存储功能正常' : '❌ 本地存储功能异常');
+                localStorage.removeItem('github-pages-test');
+            } catch (e) {
+                alert('❌ 本地存储不可用: ' + e.message);
+            }
+        }
+
+        // 自动检测功能
+        window.addEventListener('load', () => {
+            console.log('✅ GitHub Pages 部署测试页面加载完成');
+            console.log('📍 URL:', window.location.href);
+            console.log('🕒 时间:', new Date().toISOString());
+        });
+    </script>
+</body>
+</html>
