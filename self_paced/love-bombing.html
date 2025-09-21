@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>爱情轰炸 - Love Bombing</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 30px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+        h1 {
+            text-align: center;
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        h2 {
+            color: #ffd700;
+            border-bottom: 2px solid rgba(255, 215, 0, 0.5);
+            padding-bottom: 10px;
+            margin-top: 30px;
+        }
+        .info-box {
+            background: rgba(255, 255, 255, 0.15);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border-left: 5px solid #ffd700;
+        }
+        .warning {
+            background: rgba(255, 0, 0, 0.2);
+            border-left-color: #ff6b6b;
+        }
+        .test-info {
+            background: rgba(0, 255, 0, 0.2);
+            border-left-color: #51cf66;
+            text-align: center;
+            font-weight: bold;
+        }
+        ul {
+            padding-left: 20px;
+        }
+        li {
+            margin: 10px 0;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            opacity: 0.8;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>💣 爱情轰炸 Love Bombing 💣</h1>
+        
+        <div class="info-box test-info">
+            ✅ 手机测试页面已成功加载！<br>
+            📱 如果你能看到这个页面，说明GitHub Pages部署成功
+        </div>
+
+        <h2>什么是爱情轰炸？</h2>
+        <p><strong>爱情轰炸（Love Bombing）</strong>是一种操控策略，通常在关系的早期阶段使用。施加者会用过度的关注、赞美和感情来"轰炸"目标对象。</p>
+
+        <div class="info-box">
+            <h3>典型表现：</h3>
+            <ul>
+                <li>🌹 过度的浪漫手势和礼物</li>
+                <li>💕 频繁的赞美和恭维</li>
+                <li>📱 持续不断的信息和电话</li>
+                <li>⚡ 关系发展异常迅速</li>
+                <li>🎭 声称"真爱难觅"或"命中注定"</li>
+                <li>🕰️ 要求大量时间和关注</li>
+            </ul>
+        </div>
+
+        <h2>为什么要警惕？</h2>
+        <div class="info-box warning">
+            <p><strong>⚠️ 警告信号：</strong></p>
+            <p>爱情轰炸通常是<strong>操控循环</strong>的第一阶段，之后可能跟随：</p>
+            <ul>
+                <li>🎭 贬低和批评</li>
+                <li>🔒 控制和隔离</li>
+                <li>😵 情感操控</li>
+                <li>💔 循环性的奖惩</li>
+            </ul>
+        </div>
+
+        <h2>如何保护自己？</h2>
+        <div class="info-box">
+            <ul>
+                <li>🧠 保持理性思考</li>
+                <li>⏱️ 给关系发展足够时间</li>
+                <li>👥 维持与朋友家人的联系</li>
+                <li>🔍 观察对方的一致性</li>
+                <li>💪 相信自己的直觉</li>
+                <li>📖 学习健康关系的特征</li>
+            </ul>
+        </div>
+
+        <h2>健康的关系应该是：</h2>
+        <div class="info-box">
+            <ul>
+                <li>🤝 相互尊重</li>
+                <li>🗣️ 开放沟通</li>
+                <li>⚖️ 平衡给予和接受</li>
+                <li>🌱 逐步建立信任</li>
+                <li>🆓 保持个人空间</li>
+                <li>💯 支持个人成长</li>
+            </ul>
+        </div>
+
+        <div class="info-box test-info">
+            <h3>📱 移动端测试信息</h3>
+            <p>访问时间: <span id="timestamp"></span></p>
+            <p>设备信息: <span id="device-info"></span></p>
+            <p>页面URL: <span id="page-url"></span></p>
+        </div>
+
+        <div class="footer">
+            <p>💡 记住：真正的爱情需要时间来培养，不会让你感到压迫或不安。</p>
+            <p>🌟 GitHub Pages 移动端测试 - 2025</p>
+        </div>
+    </div>
+
+    <script>
+        // 显示页面加载信息
+        document.getElementById('timestamp').textContent = new Date().toLocaleString('zh-CN');
+        document.getElementById('device-info').textContent = navigator.userAgent.includes('Mobile') ? '📱 移动设备' : '💻 桌面设备';
+        document.getElementById('page-url').textContent = window.location.href;
+        
+        // 控制台输出测试信息
+        console.log('🎉 Love Bombing 页面加载成功！');
+        console.log('📱 设备类型:', navigator.userAgent);
+        console.log('🌐 页面URL:', window.location.href);
+        console.log('⏰ 加载时间:', new Date().toISOString());
+    </script>
+</body>
+</html>
