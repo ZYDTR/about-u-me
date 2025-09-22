@@ -92,16 +92,12 @@
         .progress-node {
             position: relative;
             z-index: 2;
-            width: 60px;
-            height: 60px;
+            width: 40px;
+            height: 40px;
             border-radius: 50%;
             display: none;
-            align-items: center;
-            justify-content: center;
             cursor: pointer;
             transition: all 0.3s ease;
-            border: 3px solid transparent;
-            background-clip: padding-box;
         }
 
         .progress-node.visible {
@@ -186,17 +182,14 @@
             transform: rotateY(180deg);
         }
 
-        .card-icon {
-            width: 80px;
-            height: 80px;
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 20px;
-            font-size: 36px;
-            color: white;
+        .answer-hint {
+            font-size: 12px;
+            color: rgba(102, 126, 234, 0.6);
+            margin-top: 10px;
+            padding: 8px 12px;
+            background: rgba(102, 126, 234, 0.1);
+            border-radius: 8px;
+            border-left: 3px solid rgba(102, 126, 234, 0.3);
         }
 
         .card-title {
@@ -292,9 +285,8 @@
             }
             
             .progress-node {
-                width: 50px;
-                height: 50px;
-                font-size: 10px;
+                width: 35px;
+                height: 35px;
             }
             
             .card {
@@ -371,12 +363,11 @@
             <div class="card" id="learningCard">
                 <!-- 卡片正面 -->
                 <div class="card-face card-front">
-                    <div class="card-icon">🔥</div>
                     <h2 class="card-title">煤气灯效应</h2>
                     <p class="card-description">
                         这是一个重要的心理学概念。点击卡片翻转到背面开始学习！
                     </p>
-                    <button class="card-action">开始学习</button>
+                    <button class="card-action" onclick="showConceptPage()">查看详细课程</button>
                 </div>
 
                 <!-- 卡片背面 -->
@@ -384,6 +375,7 @@
                     <h3 class="card-title">煤气灯效应 - 填空练习</h3>
                     <div class="question-content">
                         煤气灯效应是一种心理操控形式，操控者通过<input type="text" class="blank-input" placeholder="两个字">和<input type="text" class="blank-input" placeholder="四个字">让受害者质疑自己的记忆。
+                        <div class="answer-hint">📝 临时答案：否认、扭曲事实</div>
                     </div>
                     <button class="submit-btn" onclick="checkAnswer()">提交答案</button>
                 </div>
@@ -522,25 +514,43 @@
                 return;
             }
             
-            // 模拟答案验证（这里总是成功）
-            showFeedback('回答正确！解锁下一个概念', 'success');
+            // 临时答案验证（正确答案：否认、扭曲事实）
+            const answers = ['否认', '扭曲事实'];
+            let isCorrect = true;
             
-            // 延迟解锁下一个概念
-            setTimeout(() => {
-                if (currentConceptIndex < concepts.length - 1) {
-                    currentConceptIndex++;
-                    updateProgressLine();
-                    updateCard();
-                    
-                    // 清空输入框
-                    inputs.forEach(input => input.value = '');
-                    
-                    // 翻转回正面
-                    if (isCardFlipped) {
-                        flipCard();
-                    }
+            inputs.forEach((input, index) => {
+                if (!answers[index] || !input.value.trim().includes(answers[index])) {
+                    isCorrect = false;
                 }
-            }, 1500);
+            });
+            
+            if (isCorrect) {
+                showFeedback('回答正确！解锁下一个概念', 'success');
+                
+                // 延迟解锁下一个概念
+                setTimeout(() => {
+                    if (currentConceptIndex < concepts.length - 1) {
+                        currentConceptIndex++;
+                        updateProgressLine();
+                        updateCard();
+                        
+                        // 清空输入框
+                        inputs.forEach(input => input.value = '');
+                        
+                        // 翻转回正面
+                        if (isCardFlipped) {
+                            flipCard();
+                        }
+                    }
+                }, 1500);
+            } else {
+                showFeedback('答案不正确，请参考提示重新填写！', 'error');
+            }
+        }
+        
+        // 显示概念详细页面（暂不实现链接）
+        function showConceptPage() {
+            showFeedback('功能开发中，将来会跳转到对应的HTML详细课程页面', 'success');
         }
 
         // 显示反馈
