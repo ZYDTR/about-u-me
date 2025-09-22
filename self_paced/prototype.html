@@ -102,6 +102,13 @@
             box-shadow: 0 2px 8px rgba(16, 185, 129, 0.6);
         }
 
+        .progress-node.selected {
+            background: #059669;
+            transform: scale(1.2);
+            box-shadow: 0 3px 12px rgba(16, 185, 129, 0.8);
+            border: 3px solid #ffffff;
+        }
+
         .progress-node.locked {
             background: rgba(255, 255, 255, 0.2);
             color: rgba(255, 255, 255, 0.6);
@@ -379,11 +386,41 @@
     <script>
         // 概念数据
         const concepts = [
-            { id: 'gaslighting', name: '煤气灯效应', icon: '🔥', color: '#ef4444' },
-            { id: 'learned-helplessness', name: '习得性失助', icon: '🧠', color: '#3b82f6' },
-            { id: 'love-bombing', name: '爱情轰炸', icon: '💣', color: '#8b5cf6' },
-            { id: 'traumatic-bonding', name: '创伤性结合', icon: '🔗', color: '#059669' },
-            { id: 'darvo', name: 'DARVO', icon: '🔄', color: '#d97706' }
+            { 
+                id: 'gaslighting', 
+                name: '煤气灯效应', 
+                question: '煤气灯效应是一种心理操控形式，操控者通过<input type="text" class="blank-input" placeholder="两个字">和<input type="text" class="blank-input" placeholder="四个字">让受害者质疑自己的记忆。',
+                answers: ['否认', '扭曲事实'],
+                hint: '否认、扭曲事实'
+            },
+            { 
+                id: 'learned-helplessness', 
+                name: '习得性失助', 
+                question: '习得性失助是指当个体经历了一系列<input type="text" class="blank-input" placeholder="四个字">的经历后，会形成一种<input type="text" class="blank-input" placeholder="三个字">的心理状态。',
+                answers: ['无法控制', '放弃抵抗'],
+                hint: '无法控制、放弃抵抗'
+            },
+            { 
+                id: 'love-bombing', 
+                name: '爱情轰炸', 
+                question: '爱情轰炸是一种操控技巧，通过<input type="text" class="blank-input" placeholder="四个字">和<input type="text" class="blank-input" placeholder="四个字">来让对方产生依赖。',
+                answers: ['过度关注', '过度赠予'],
+                hint: '过度关注、过度赠予'
+            },
+            { 
+                id: 'traumatic-bonding', 
+                name: '创伤性结合', 
+                question: '创伤性结合是指在<input type="text" class="blank-input" placeholder="四个字">和<input type="text" class="blank-input" placeholder="四个字">之间形成的不健康依赖关系。',
+                answers: ['施暴者', '受害者'],
+                hint: '施暴者、受害者'
+            },
+            { 
+                id: 'darvo', 
+                name: 'DARVO', 
+                question: 'DARVO是一种操控策略，意思是<input type="text" class="blank-input" placeholder="两个字">、<input type="text" class="blank-input" placeholder="两个字">、<input type="text" class="blank-input" placeholder="两个字">。',
+                answers: ['否认', '反击', '反转'],
+                hint: '否认、反击、反转'
+            }
         ];
 
         let currentConceptIndex = 0; // 当前概念索引
@@ -397,10 +434,12 @@
 
         // 设置事件监听
         function setupEventListeners() {
-            // 卡片点击翻转
+            // 卡片点击翻转（排除按钮区域）
             const card = document.getElementById('learningCard');
             card.addEventListener('click', function(e) {
-                if (!e.target.closest('.blank-input') && !e.target.closest('.submit-btn')) {
+                if (!e.target.closest('.blank-input') && 
+                    !e.target.closest('.submit-btn') && 
+                    !e.target.closest('.card-action')) {
                     flipCard();
                 }
             });
@@ -415,13 +454,8 @@
                 });
             });
 
-            // 阻止输入框点击时翻转卡片
-            const inputs = document.querySelectorAll('.blank-input');
-            inputs.forEach(input => {
-                input.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                });
-            });
+            // 初始化输入框事件
+            setupInputEvents();
         }
 
         // 翻转卡片
@@ -436,8 +470,7 @@
             // 只能选择已完成的概念
             if (index >= currentConceptIndex) return;
             
-            // 临时切换到已完成的概念
-            const tempIndex = currentConceptIndex;
+            // 永久切换到选中的概念
             currentConceptIndex = index;
             updateProgressLine();
             updateCard();
@@ -446,12 +479,6 @@
             if (isCardFlipped) {
                 flipCard();
             }
-            
-            // 恢复当前索引
-            setTimeout(() => {
-                currentConceptIndex = tempIndex;
-                updateProgressLine();
-            }, 3000);
         }
 
         // 更新进度轴
@@ -459,20 +486,27 @@
             const nodes = document.querySelectorAll('.progress-node');
             const progressLine = document.querySelector('.progress-line');
             
-            // 隐藏所有节点
+            // 获取已完成的题目数量（包括当前题目之前的所有题目）
+            const maxCompletedIndex = Math.max(...Array.from({length: concepts.length}, (_, i) => i).filter(i => localStorage.getItem(`concept_${i}_completed`) === 'true'));
+            
             nodes.forEach((node, index) => {
-                node.classList.remove('completed', 'visible');
+                node.classList.remove('completed', 'visible', 'selected');
                 
-                // 只显示已完成的节点
-                if (index < currentConceptIndex) {
+                // 显示已完成的节点
+                if (localStorage.getItem(`concept_${index}_completed`) === 'true') {
                     node.classList.add('completed', 'visible');
+                    
+                    // 当前选中的节点
+                    if (index === currentConceptIndex) {
+                        node.classList.add('selected');
+                    }
                 }
             });
             
             // 更新连接线长度
-            const completedCount = currentConceptIndex;
-            if (completedCount > 1) {
-                const lineWidth = (completedCount - 1) * 40; // 25px节点 + 15px间距
+            const completedNodes = document.querySelectorAll('.progress-node.completed');
+            if (completedNodes.length > 1) {
+                const lineWidth = (completedNodes.length - 1) * 40;
                 progressLine.style.width = lineWidth + 'px';
             } else {
                 progressLine.style.width = '0px';
@@ -482,12 +516,13 @@
         // 更新卡片内容
         function updateCard() {
             const concept = concepts[currentConceptIndex];
-            const cardIcon = document.querySelector('.card-icon');
             const cardTitle = document.querySelectorAll('.card-title');
+            const questionContent = document.querySelector('.question-content');
+            const answerHint = document.querySelector('.answer-hint');
             
-            cardIcon.textContent = concept.icon;
             cardTitle[0].textContent = concept.name;
             cardTitle[1].textContent = concept.name + ' - 填空练习';
+            questionContent.innerHTML = concept.question + '<div class="answer-hint">📝 临时答案：' + concept.hint + '</div>';
         }
 
         // 检查答案
@@ -506,8 +541,9 @@
                 return;
             }
             
-            // 临时答案验证（正确答案：否认、扭曲事实）
-            const answers = ['否认', '扭曲事实'];
+            // 获取当前概念的正确答案
+            const concept = concepts[currentConceptIndex];
+            const answers = concept.answers;
             let isCorrect = true;
             
             inputs.forEach((input, index) => {
@@ -519,6 +555,9 @@
             if (isCorrect) {
                 showFeedback('回答正确！解锁下一个概念', 'success');
                 
+                // 标记当前题目为已完成
+                localStorage.setItem(`concept_${currentConceptIndex}_completed`, 'true');
+                
                 // 延迟解锁下一个概念
                 setTimeout(() => {
                     if (currentConceptIndex < concepts.length - 1) {
@@ -527,17 +566,31 @@
                         updateCard();
                         
                         // 清空输入框
-                        inputs.forEach(input => input.value = '');
+                        const newInputs = document.querySelectorAll('.blank-input');
+                        newInputs.forEach(input => input.value = '');
                         
                         // 翻转回正面
                         if (isCardFlipped) {
                             flipCard();
                         }
+                        
+                        // 重新绑定事件
+                        setupInputEvents();
                     }
                 }, 1500);
             } else {
                 showFeedback('答案不正确，请参考提示重新填写！', 'error');
             }
+        }
+        
+        // 设置输入框事件
+        function setupInputEvents() {
+            const inputs = document.querySelectorAll('.blank-input');
+            inputs.forEach(input => {
+                input.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                });
+            });
         }
         
         // 显示概念详细页面（暂不实现链接）
