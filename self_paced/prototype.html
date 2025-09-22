@@ -42,49 +42,41 @@
         .progress-container {
             background: rgba(255, 255, 255, 0.1);
             backdrop-filter: blur(10px);
-            border-radius: 20px;
-            padding: 20px;
-            margin-bottom: 30px;
+            border-radius: 15px;
+            padding: 15px;
+            margin-bottom: 20px;
             border: 1px solid rgba(255, 255, 255, 0.2);
         }
 
         .progress-title {
             text-align: center;
             color: white;
-            margin-bottom: 20px;
-            font-size: 16px;
+            margin-bottom: 15px;
+            font-size: 14px;
             opacity: 0.9;
         }
 
         /* 进度轴 */
         .progress-axis {
             display: flex;
-            justify-content: space-between;
+            justify-content: flex-start;
             align-items: center;
             position: relative;
             padding: 0 10px;
+            gap: 15px;
+            min-height: 30px;
         }
 
         /* 连接线 */
         .progress-line {
             position: absolute;
             top: 50%;
-            left: 10px;
-            right: 10px;
-            height: 4px;
-            background: rgba(255, 255, 255, 0.3);
+            left: 35px;
+            height: 3px;
+            background: #10b981;
             border-radius: 2px;
             z-index: 1;
-        }
-
-        .progress-line-filled {
-            position: absolute;
-            top: 0;
-            left: 0;
-            height: 100%;
-            background: linear-gradient(90deg, #4ade80, #22c55e);
-            border-radius: 2px;
-            width: 0%;
+            width: 0px;
             transition: width 0.5s ease;
         }
 
@@ -92,8 +84,8 @@
         .progress-node {
             position: relative;
             z-index: 2;
-            width: 40px;
-            height: 40px;
+            width: 25px;
+            height: 25px;
             border-radius: 50%;
             display: none;
             cursor: pointer;
@@ -105,16 +97,9 @@
         }
 
         .progress-node.completed {
-            background: linear-gradient(135deg, #4ade80, #22c55e);
-            color: white;
-            box-shadow: 0 4px 15px rgba(74, 222, 128, 0.4);
-        }
-
-        .progress-node.current {
-            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
-            color: white;
-            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
-            animation: pulse 2s infinite;
+            background: #10b981;
+            border: 2px solid #ffffff;
+            box-shadow: 0 2px 8px rgba(16, 185, 129, 0.6);
         }
 
         .progress-node.locked {
@@ -285,8 +270,13 @@
             }
             
             .progress-node {
-                width: 35px;
-                height: 35px;
+                width: 20px;
+                height: 20px;
+            }
+            
+            .progress-container {
+                padding: 10px;
+                margin-bottom: 15px;
             }
             
             .card {
@@ -346,11 +336,9 @@
         <div class="progress-container">
             <div class="progress-title">学习进度</div>
             <div class="progress-axis">
-                <div class="progress-line">
-                    <div class="progress-line-filled"></div>
-                </div>
+                <div class="progress-line"></div>
                 
-                <div class="progress-node visible current" data-concept="gaslighting"></div>
+                <div class="progress-node" data-concept="gaslighting"></div>
                 <div class="progress-node" data-concept="learned-helplessness"></div>
                 <div class="progress-node" data-concept="love-bombing"></div>
                 <div class="progress-node" data-concept="traumatic-bonding"></div>
@@ -469,22 +457,26 @@
         // 更新进度轴
         function updateProgressLine() {
             const nodes = document.querySelectorAll('.progress-node');
-            const progressLineFilled = document.querySelector('.progress-line-filled');
+            const progressLine = document.querySelector('.progress-line');
             
+            // 隐藏所有节点
             nodes.forEach((node, index) => {
-                node.classList.remove('completed', 'current', 'visible');
+                node.classList.remove('completed', 'visible');
                 
+                // 只显示已完成的节点
                 if (index < currentConceptIndex) {
                     node.classList.add('completed', 'visible');
-                } else if (index === currentConceptIndex) {
-                    node.classList.add('current', 'visible');
                 }
-                // 其他节点保持隐藏状态
             });
             
-            // 更新进度线
-            const progress = currentConceptIndex > 0 ? (currentConceptIndex / (concepts.length - 1)) * 100 : 0;
-            progressLineFilled.style.width = Math.min(progress, 100) + '%';
+            // 更新连接线长度
+            const completedCount = currentConceptIndex;
+            if (completedCount > 1) {
+                const lineWidth = (completedCount - 1) * 40; // 25px节点 + 15px间距
+                progressLine.style.width = lineWidth + 'px';
+            } else {
+                progressLine.style.width = '0px';
+            }
         }
 
         // 更新卡片内容
