@@ -424,6 +424,7 @@
         ];
 
         let currentConceptIndex = 0; // 当前概念索引
+        let maxUnlockedIndex = 0; // 最大解锁索引
         let isCardFlipped = false;
 
         // 初始化
@@ -468,9 +469,9 @@
         // 选择概念
         function selectConcept(index) {
             // 只能选择已完成的概念
-            if (index >= currentConceptIndex) return;
+            if (index >= maxUnlockedIndex) return;
             
-            // 永久切换到选中的概念
+            // 切换到选中的概念
             currentConceptIndex = index;
             updateProgressLine();
             updateCard();
@@ -486,14 +487,11 @@
             const nodes = document.querySelectorAll('.progress-node');
             const progressLine = document.querySelector('.progress-line');
             
-            // 获取已完成的题目数量（包括当前题目之前的所有题目）
-            const maxCompletedIndex = Math.max(...Array.from({length: concepts.length}, (_, i) => i).filter(i => localStorage.getItem(`concept_${i}_completed`) === 'true'));
-            
             nodes.forEach((node, index) => {
                 node.classList.remove('completed', 'visible', 'selected');
                 
                 // 显示已完成的节点
-                if (localStorage.getItem(`concept_${index}_completed`) === 'true') {
+                if (index < maxUnlockedIndex) {
                     node.classList.add('completed', 'visible');
                     
                     // 当前选中的节点
@@ -504,9 +502,8 @@
             });
             
             // 更新连接线长度
-            const completedNodes = document.querySelectorAll('.progress-node.completed');
-            if (completedNodes.length > 1) {
-                const lineWidth = (completedNodes.length - 1) * 40;
+            if (maxUnlockedIndex > 1) {
+                const lineWidth = (maxUnlockedIndex - 1) * 40;
                 progressLine.style.width = lineWidth + 'px';
             } else {
                 progressLine.style.width = '0px';
@@ -555,13 +552,11 @@
             if (isCorrect) {
                 showFeedback('回答正确！解锁下一个概念', 'success');
                 
-                // 标记当前题目为已完成
-                localStorage.setItem(`concept_${currentConceptIndex}_completed`, 'true');
-                
                 // 延迟解锁下一个概念
                 setTimeout(() => {
                     if (currentConceptIndex < concepts.length - 1) {
                         currentConceptIndex++;
+                        maxUnlockedIndex = currentConceptIndex + 1; // 解锁下一个
                         updateProgressLine();
                         updateCard();
                         
