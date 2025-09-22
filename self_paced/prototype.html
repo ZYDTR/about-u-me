@@ -14,7 +14,7 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #fdeef4 0%, #e8f5e8 50%, #f0e6ff 100%);
+            background: linear-gradient(135deg, #ffeaa7 0%, #fab1a0 50%, #fd79a8 100%);
             min-height: 100vh;
             color: #4a4a4a;
             overflow-x: hidden;
@@ -38,14 +38,6 @@
             font-weight: 600;
             position: relative;
         }
-        
-        .title::before {
-            content: '🐱 ';
-        }
-        
-        .title::after {
-            content: ' 🐱';
-        }
 
         /* 进度轴容器 */
         .progress-container {
@@ -66,8 +58,79 @@
             position: relative;
         }
         
-        .progress-title::before {
-            content: '🐾 ';
+        /* CSS小猫动画 */
+        .cat {
+            display: inline-block;
+            font-family: monospace;
+            font-size: 12px;
+            line-height: 1;
+            margin: 0 5px;
+            animation: catWalk 3s ease-in-out infinite;
+        }
+        
+        .cat-blinking {
+            animation: catBlink 4s ease-in-out infinite;
+        }
+        
+        .cat-tail {
+            animation: tailWag 2s ease-in-out infinite;
+        }
+        
+        @keyframes catWalk {
+            0%, 100% { transform: translateX(0px); }
+            50% { transform: translateX(10px); }
+        }
+        
+        @keyframes catBlink {
+            0%, 90%, 100% { opacity: 1; }
+            95% { opacity: 0.3; }
+        }
+        
+        @keyframes tailWag {
+            0%, 100% { transform: rotate(0deg); }
+            25% { transform: rotate(10deg); }
+            75% { transform: rotate(-10deg); }
+        }
+        
+        .floating-cat {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            font-family: monospace;
+            font-size: 14px;
+            color: #d63031;
+            z-index: 1000;
+            animation: float 6s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        .corner-cats {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            font-family: monospace;
+            font-size: 10px;
+            color: rgba(255, 255, 255, 0.7);
+            z-index: 1000;
+        }
+        
+        .walking-cat {
+            position: absolute;
+            top: 50%;
+            left: -50px;
+            font-family: monospace;
+            font-size: 16px;
+            color: #fab1a0;
+            animation: walkAcross 15s linear infinite;
+        }
+        
+        @keyframes walkAcross {
+            0% { left: -50px; }
+            100% { left: calc(100% + 50px); }
         }
 
         /* 进度轴 */
@@ -87,7 +150,7 @@
             top: 50%;
             left: 35px;
             height: 3px;
-            background: #b8a9da;
+            background: #e17055;
             border-radius: 2px;
             z-index: 1;
             width: 0px;
@@ -111,14 +174,14 @@
         }
 
         .progress-node.completed {
-            background: #b8a9da;
-            box-shadow: 0 2px 8px rgba(184, 169, 218, 0.5);
+            background: #e17055;
+            box-shadow: 0 2px 8px rgba(225, 112, 85, 0.5);
         }
 
         .progress-node.selected {
-            background: #a593c8;
+            background: #d63031;
             transform: scale(1.2);
-            box-shadow: 0 3px 12px rgba(165, 147, 200, 0.7);
+            box-shadow: 0 3px 12px rgba(214, 48, 49, 0.7);
         }
 
         .progress-node.locked {
@@ -178,30 +241,25 @@
         }
 
         .card-front {
-            background: linear-gradient(135deg, #fef9fc, #f5f2f9);
+            background: linear-gradient(135deg, #fff5f5, #ffeaa7);
             position: relative;
         }
 
         .card-back {
-            background: linear-gradient(135deg, #f5f2f9, #f0ecf5);
+            background: linear-gradient(135deg, #ffeaa7, #fff5f5);
             transform: rotateY(180deg);
             position: relative;
         }
 
         .answer-hint {
             font-size: 12px;
-            color: rgba(139, 115, 165, 0.7);
+            color: rgba(214, 48, 49, 0.7);
             margin-top: 10px;
             padding: 8px 12px;
-            background: rgba(184, 169, 218, 0.15);
+            background: rgba(225, 112, 85, 0.15);
             border-radius: 8px;
-            border-left: 3px solid rgba(184, 169, 218, 0.4);
+            border-left: 3px solid rgba(225, 112, 85, 0.4);
             position: relative;
-        }
-        
-        .answer-hint::before {
-            content: '😺';
-            margin-right: 5px;
         }
 
         .card-title {
@@ -219,7 +277,7 @@
         }
 
         .card-action {
-            background: linear-gradient(135deg, #f2b5d4, #e8a2c7);
+            background: linear-gradient(135deg, #fd79a8, #e84393);
             color: white;
             border: none;
             padding: 12px 30px;
@@ -233,11 +291,11 @@
 
         .card-action:hover {
             transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(242, 181, 212, 0.4);
+            box-shadow: 0 5px 15px rgba(253, 121, 168, 0.4);
         }
         
         .card-action::before {
-            content: '🐱';
+            content: '';
             margin-right: 8px;
         }
 
@@ -252,30 +310,30 @@
         .blank-input {
             display: inline-block;
             border: none;
-            border-bottom: 2px solid #b8a9da;
+            border-bottom: 2px solid #e17055;
             background: transparent;
             padding: 5px 10px;
             margin: 0 5px;
             font-size: 18px;
             font-weight: 600;
-            color: #8b73a5;
+            color: #d63031;
             min-width: 100px;
             text-align: center;
         }
 
         .blank-input::placeholder {
-            color: rgba(139, 115, 165, 0.4);
+            color: rgba(214, 48, 49, 0.4);
             font-weight: 400;
             font-size: 14px;
         }
 
         .blank-input:focus {
             outline: none;
-            border-bottom-color: #a593c8;
+            border-bottom-color: #d63031;
         }
 
         .submit-btn {
-            background: linear-gradient(135deg, #9dd4aa, #86c995);
+            background: linear-gradient(135deg, #fab1a0, #e17055);
             color: white;
             border: none;
             padding: 15px 40px;
@@ -290,11 +348,11 @@
 
         .submit-btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(157, 212, 170, 0.4);
+            box-shadow: 0 5px 15px rgba(250, 177, 160, 0.4);
         }
         
         .submit-btn::before {
-            content: '🐈';
+            content: '';
             margin-right: 8px;
         }
 
@@ -369,11 +427,19 @@
 </head>
 <body>
     <div class="container">
-        <h1 class="title">心理学概念交互式学习系统</h1>
+        <h1 class="title">
+            <span class="cat cat-blinking">(｡• ౪ •｡)</span>
+            心理学概念交互式学习系统
+            <span class="cat cat-tail">(•౪•)ノ彡*゜゜</span>
+        </h1>
         
         <!-- 进度轴 -->
         <div class="progress-container">
-            <div class="progress-title">学习进度</div>
+            <div class="progress-title">
+                <span class="cat cat-blinking">(°□°)ノ</span>
+                学习进度
+                <span class="cat cat-tail">~(≧▽≦)~</span>
+            </div>
             <div class="progress-axis">
                 <div class="progress-line"></div>
                 
@@ -394,7 +460,9 @@
                     <p class="card-description">
                         这是一个重要的心理学概念。点击卡片翻转到背面开始学习！
                     </p>
-                    <button class="card-action" onclick="showConceptPage()">查看详细课程</button>
+                    <button class="card-action" onclick="showConceptPage()">
+                        <span class="cat">(｡• ౪ •｡)</span> 查看详细课程
+                    </button>
                 </div>
 
                 <!-- 卡片背面 -->
@@ -404,7 +472,9 @@
                         煤气灯效应是一种心理操控形式，操控者通过<input type="text" class="blank-input" placeholder="两个字">和<input type="text" class="blank-input" placeholder="四个字">让受害者质疑自己的记忆。
                         <div class="answer-hint">📝 临时答案：否认、扭曲事实</div>
                     </div>
-                    <button class="submit-btn" onclick="checkAnswer()">提交答案</button>
+                    <button class="submit-btn" onclick="checkAnswer()">
+                        <span class="cat cat-blinking">(´• ω •｀)</span> 提交答案
+                    </button>
                 </div>
             </div>
         </div>
@@ -413,6 +483,21 @@
     <!-- 反馈提示 -->
     <div class="feedback" id="feedback">
         <p id="feedbackText"></p>
+    </div>
+    
+    <!-- 浮动小猫 -->
+    <div class="floating-cat">
+        (≧ω≦)ノ゜、。。。
+    </div>
+    
+    <!-- 角落小猫 -->
+    <div class="corner-cats">
+        <div class="cat cat-blinking">(｡• ౪ •｡)</div>
+    </div>
+    
+    <!-- 行走的小猫 -->
+    <div class="walking-cat">
+        =(°ω°)=゜。。。
     </div>
 
     <script>
@@ -547,11 +632,10 @@
             const concept = concepts[currentConceptIndex];
             const cardTitle = document.querySelectorAll('.card-title');
             const questionContent = document.querySelector('.question-content');
-            const answerHint = document.querySelector('.answer-hint');
             
             cardTitle[0].textContent = concept.name;
             cardTitle[1].textContent = concept.name + ' - 填空练习';
-            questionContent.innerHTML = concept.question + '<div class="answer-hint">📝 临时答案：' + concept.hint + '</div>';
+            questionContent.innerHTML = concept.question + '<div class="answer-hint"><span class="cat cat-tail">(≧▽≦)</span> 临时答案：' + concept.hint + '</div>';
         }
 
         // 检查答案
