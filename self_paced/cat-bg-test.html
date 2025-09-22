@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>小猫GIF背景测试</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            min-height: 100vh;
+            color: #333;
+            overflow-x: hidden;
+        }
+
+        /* 方案1：全屏平铺背景 */
+        .bg-tile {
+            background: url('cat_gif_6.gif') repeat;
+            background-size: 200px 200px;
+            min-height: 100vh;
+            position: relative;
+        }
+
+        /* 方案2：固定背景覆盖 */
+        .bg-cover {
+            background: url('cat_gif_6.gif') center center;
+            background-size: cover;
+            background-attachment: fixed;
+            min-height: 100vh;
+            position: relative;
+        }
+
+        /* 方案3：包含背景 */
+        .bg-contain {
+            background: url('cat_gif_6.gif') center center no-repeat;
+            background-size: contain;
+            min-height: 100vh;
+            position: relative;
+        }
+
+        /* 方案4：多个小猫飘浮 */
+        .bg-floating {
+            background: linear-gradient(135deg, #ffeaa7 0%, #fab1a0 50%, #fd79a8 100%);
+            min-height: 100vh;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .floating-cat {
+            position: absolute;
+            width: 120px;
+            height: 120px;
+            background: url('cat_gif_6.gif') center center;
+            background-size: cover;
+            border-radius: 50%;
+            opacity: 0.3;
+        }
+
+        .floating-cat:nth-child(1) {
+            top: 10%;
+            left: 10%;
+            animation: float1 8s ease-in-out infinite;
+        }
+
+        .floating-cat:nth-child(2) {
+            top: 60%;
+            right: 15%;
+            animation: float2 6s ease-in-out infinite;
+        }
+
+        .floating-cat:nth-child(3) {
+            bottom: 20%;
+            left: 20%;
+            animation: float3 10s ease-in-out infinite;
+        }
+
+        @keyframes float1 {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(10deg); }
+        }
+
+        @keyframes float2 {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-30px) rotate(-10deg); }
+        }
+
+        @keyframes float3 {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-15px) rotate(5deg); }
+        }
+
+        /* 方案5：角落小猫 */
+        .bg-corner {
+            background: linear-gradient(135deg, #ffeaa7 0%, #fab1a0 50%, #fd79a8 100%);
+            min-height: 100vh;
+            position: relative;
+        }
+
+        .corner-cat {
+            position: fixed;
+            width: 100px;
+            height: 100px;
+            background: url('cat_gif_6.gif') center center;
+            background-size: cover;
+            border-radius: 50%;
+            z-index: 1000;
+        }
+
+        .corner-cat.top-left {
+            top: 20px;
+            left: 20px;
+        }
+
+        .corner-cat.bottom-right {
+            bottom: 20px;
+            right: 20px;
+            animation: bounce 3s ease-in-out infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        /* 内容容器 */
+        .content {
+            position: relative;
+            z-index: 10;
+            background: rgba(255, 255, 255, 0.9);
+            margin: 20px;
+            padding: 30px;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+        }
+
+        .section {
+            margin-bottom: 50px;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .title {
+            font-size: 28px;
+            text-align: center;
+            margin-bottom: 20px;
+            color: #d63031;
+        }
+
+        .description {
+            font-size: 16px;
+            line-height: 1.6;
+            text-align: center;
+            color: #666;
+        }
+
+        .demo-card {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 30px;
+            border-radius: 20px;
+            max-width: 600px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        /* 水印效果 */
+        .bg-watermark {
+            background: linear-gradient(135deg, #ffeaa7 0%, #fab1a0 50%, #fd79a8 100%);
+            min-height: 100vh;
+            position: relative;
+        }
+
+        .bg-watermark::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('cat_gif_6.gif') center center no-repeat;
+            background-size: 300px 300px;
+            opacity: 0.1;
+            z-index: 1;
+        }
+
+        .nav {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 10px;
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+        }
+
+        .nav a {
+            display: block;
+            padding: 5px 10px;
+            text-decoration: none;
+            color: #d63031;
+            font-size: 14px;
+        }
+
+        .nav a:hover {
+            background: rgba(214, 48, 49, 0.1);
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <!-- 导航 -->
+    <div class="nav">
+        <a href="#tile">平铺背景</a>
+        <a href="#cover">覆盖背景</a>
+        <a href="#floating">飘浮小猫</a>
+        <a href="#corner">角落小猫</a>
+        <a href="#watermark">水印效果</a>
+    </div>
+
+    <!-- 方案1：平铺背景 -->
+    <div id="tile" class="section bg-tile">
+        <div class="demo-card">
+            <h1 class="title">方案1：平铺背景</h1>
+            <p class="description">
+                小猫GIF以200x200像素重复平铺整个背景<br>
+                营造满屏可爱的效果，但可能会有点眼花缭乱
+            </p>
+        </div>
+    </div>
+
+    <!-- 方案2：覆盖背景 -->
+    <div id="cover" class="section bg-cover">
+        <div class="demo-card">
+            <h1 class="title">方案2：覆盖背景</h1>
+            <p class="description">
+                小猫GIF覆盖整个屏幕，使用固定附着<br>
+                滚动时背景保持固定，很有视觉冲击力
+            </p>
+        </div>
+    </div>
+
+    <!-- 方案3：飘浮小猫 -->
+    <div id="floating" class="section bg-floating">
+        <div class="floating-cat"></div>
+        <div class="floating-cat"></div>
+        <div class="floating-cat"></div>
+        
+        <div class="demo-card">
+            <h1 class="title">方案3：飘浮小猫</h1>
+            <p class="description">
+                多个小猫在温暖渐变背景上飘浮<br>
+                半透明效果，不会干扰阅读，很治愈
+            </p>
+        </div>
+    </div>
+
+    <!-- 方案4：角落小猫 -->
+    <div id="corner" class="section bg-corner">
+        <div class="corner-cat top-left"></div>
+        <div class="corner-cat bottom-right"></div>
+        
+        <div class="demo-card">
+            <h1 class="title">方案4：角落小猫</h1>
+            <p class="description">
+                小猫固定在角落，像小伙伴一样陪伴<br>
+                不影响主要内容，又有温馨的存在感
+            </p>
+        </div>
+    </div>
+
+    <!-- 方案5：水印效果 -->
+    <div id="watermark" class="section bg-watermark">
+        <div class="demo-card">
+            <h1 class="title">方案5：水印效果</h1>
+            <p class="description">
+                小猫作为淡淡的水印背景<br>
+                若隐若现，既有装饰效果又不干扰内容
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // 平滑滚动
+        document.querySelectorAll('.nav a').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                target.scrollIntoView({ behavior: 'smooth' });
+            });
+        });
+
+        // 检查GIF是否加载成功
+        const img = new Image();
+        img.onload = function() {
+            console.log('小猫GIF加载成功！');
+        };
+        img.onerror = function() {
+            console.error('小猫GIF加载失败，请检查文件路径');
+        };
+        img.src = 'cat_gif_6.gif';
+    </script>
+</body>
+</html>
