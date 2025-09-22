@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>心理学概念学习系统 - 原型展示</title>
+    <style>
+        /* 基础样式重置 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 100%;
+            margin: 0 auto;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 标题 */
+        .title {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        /* 进度轴容器 */
+        .progress-container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .progress-title {
+            text-align: center;
+            color: white;
+            margin-bottom: 20px;
+            font-size: 16px;
+            opacity: 0.9;
+        }
+
+        /* 进度轴 */
+        .progress-axis {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+            padding: 0 10px;
+        }
+
+        /* 连接线 */
+        .progress-line {
+            position: absolute;
+            top: 50%;
+            left: 10px;
+            right: 10px;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 2px;
+            z-index: 1;
+        }
+
+        .progress-line-filled {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            background: linear-gradient(90deg, #4ade80, #22c55e);
+            border-radius: 2px;
+            width: 20%;
+            transition: width 0.5s ease;
+        }
+
+        /* 进度节点 */
+        .progress-node {
+            position: relative;
+            z-index: 2;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 3px solid transparent;
+            background-clip: padding-box;
+            font-size: 12px;
+            font-weight: 600;
+            text-align: center;
+            line-height: 1.2;
+        }
+
+        .progress-node.completed {
+            background: linear-gradient(135deg, #4ade80, #22c55e);
+            color: white;
+            box-shadow: 0 4px 15px rgba(74, 222, 128, 0.4);
+        }
+
+        .progress-node.current {
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            color: white;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+            animation: pulse 2s infinite;
+        }
+
+        .progress-node.locked {
+            background: rgba(255, 255, 255, 0.2);
+            color: rgba(255, 255, 255, 0.6);
+            cursor: not-allowed;
+        }
+
+        .progress-node:not(.locked):hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        /* 卡片容器 */
+        .card-container {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            perspective: 1000px;
+        }
+
+        /* 卡片 */
+        .card {
+            width: 100%;
+            max-width: 350px;
+            height: 450px;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.6s;
+            cursor: pointer;
+        }
+
+        .card.flipped {
+            transform: rotateY(180deg);
+        }
+
+        .card-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            border-radius: 20px;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            background: white;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .card-front {
+            background: linear-gradient(135deg, #ffffff, #f8fafc);
+        }
+
+        .card-back {
+            background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
+            transform: rotateY(180deg);
+        }
+
+        .card-icon {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+            font-size: 36px;
+            color: white;
+        }
+
+        .card-title {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #1f2937;
+        }
+
+        .card-description {
+            font-size: 16px;
+            color: #6b7280;
+            line-height: 1.6;
+            margin-bottom: 30px;
+        }
+
+        .card-action {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .card-action:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        /* 填空题样式 */
+        .question-content {
+            font-size: 18px;
+            line-height: 1.8;
+            margin-bottom: 30px;
+            color: #1f2937;
+        }
+
+        .blank-input {
+            display: inline-block;
+            border: none;
+            border-bottom: 2px solid #667eea;
+            background: transparent;
+            padding: 5px 10px;
+            margin: 0 5px;
+            font-size: 18px;
+            font-weight: 600;
+            color: #667eea;
+            min-width: 100px;
+            text-align: center;
+        }
+
+        .blank-input:focus {
+            outline: none;
+            border-bottom-color: #764ba2;
+        }
+
+        .submit-btn {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 20px;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(16, 185, 129, 0.4);
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 480px) {
+            .container {
+                padding: 15px;
+            }
+            
+            .title {
+                font-size: 20px;
+            }
+            
+            .progress-node {
+                width: 50px;
+                height: 50px;
+                font-size: 10px;
+            }
+            
+            .card {
+                max-width: 300px;
+                height: 400px;
+            }
+            
+            .card-face {
+                padding: 20px;
+            }
+            
+            .card-title {
+                font-size: 20px;
+            }
+            
+            .card-description, .question-content {
+                font-size: 14px;
+            }
+        }
+
+        /* 成功/失败反馈 */
+        .feedback {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 20px 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .feedback.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .feedback.success {
+            border-left: 5px solid #10b981;
+        }
+
+        .feedback.error {
+            border-left: 5px solid #ef4444;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="title">心理学概念交互式学习系统</h1>
+        
+        <!-- 进度轴 -->
+        <div class="progress-container">
+            <div class="progress-title">学习进度</div>
+            <div class="progress-axis">
+                <div class="progress-line">
+                    <div class="progress-line-filled"></div>
+                </div>
+                
+                <div class="progress-node completed" data-concept="gaslighting">
+                    煤气灯<br>效应
+                </div>
+                <div class="progress-node current" data-concept="learned-helplessness">
+                    习得性<br>失助
+                </div>
+                <div class="progress-node locked" data-concept="love-bombing">
+                    爱情<br>轰炸
+                </div>
+                <div class="progress-node locked" data-concept="traumatic-bonding">
+                    创伤性<br>结合
+                </div>
+                <div class="progress-node locked" data-concept="darvo">
+                    DARVO
+                </div>
+            </div>
+        </div>
+
+        <!-- 卡片区域 -->
+        <div class="card-container">
+            <div class="card" id="learningCard">
+                <!-- 卡片正面 -->
+                <div class="card-face card-front">
+                    <div class="card-icon">🧠</div>
+                    <h2 class="card-title">习得性失助</h2>
+                    <p class="card-description">
+                        这是一个重要的心理学概念。点击卡片翻转到背面开始学习！
+                    </p>
+                    <button class="card-action">开始学习</button>
+                </div>
+
+                <!-- 卡片背面 -->
+                <div class="card-face card-back">
+                    <h3 class="card-title">填空练习</h3>
+                    <div class="question-content">
+                        习得性失助是指当个体经历了一系列<input type="text" class="blank-input" placeholder="?">的经历后，会形成一种<input type="text" class="blank-input" placeholder="?">的心理状态。
+                    </div>
+                    <button class="submit-btn" onclick="checkAnswer()">提交答案</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 反馈提示 -->
+    <div class="feedback" id="feedback">
+        <p id="feedbackText"></p>
+    </div>
+
+    <script>
+        // 概念数据
+        const concepts = [
+            { id: 'gaslighting', name: '煤气灯效应', icon: '🔥', color: '#ef4444' },
+            { id: 'learned-helplessness', name: '习得性失助', icon: '🧠', color: '#3b82f6' },
+            { id: 'love-bombing', name: '爱情轰炸', icon: '💣', color: '#8b5cf6' },
+            { id: 'traumatic-bonding', name: '创伤性结合', icon: '🔗', color: '#059669' },
+            { id: 'darvo', name: 'DARVO', icon: '🔄', color: '#d97706' }
+        ];
+
+        let currentConceptIndex = 1; // 当前概念索引
+        let isCardFlipped = false;
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            updateProgressLine();
+            setupEventListeners();
+        });
+
+        // 设置事件监听
+        function setupEventListeners() {
+            // 卡片点击翻转
+            const card = document.getElementById('learningCard');
+            card.addEventListener('click', function(e) {
+                if (!e.target.closest('.blank-input') && !e.target.closest('.submit-btn')) {
+                    flipCard();
+                }
+            });
+
+            // 进度轴节点点击
+            const nodes = document.querySelectorAll('.progress-node');
+            nodes.forEach((node, index) => {
+                node.addEventListener('click', function() {
+                    if (!node.classList.contains('locked')) {
+                        selectConcept(index);
+                    }
+                });
+            });
+
+            // 阻止输入框点击时翻转卡片
+            const inputs = document.querySelectorAll('.blank-input');
+            inputs.forEach(input => {
+                input.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                });
+            });
+        }
+
+        // 翻转卡片
+        function flipCard() {
+            const card = document.getElementById('learningCard');
+            card.classList.toggle('flipped');
+            isCardFlipped = !isCardFlipped;
+        }
+
+        // 选择概念
+        function selectConcept(index) {
+            if (index > currentConceptIndex) return; // 不能选择未解锁的概念
+            
+            currentConceptIndex = index;
+            updateProgressLine();
+            updateCard();
+            
+            // 如果卡片是翻转状态，翻转回正面
+            if (isCardFlipped) {
+                flipCard();
+            }
+        }
+
+        // 更新进度轴
+        function updateProgressLine() {
+            const nodes = document.querySelectorAll('.progress-node');
+            const progressLineFilled = document.querySelector('.progress-line-filled');
+            
+            nodes.forEach((node, index) => {
+                node.classList.remove('completed', 'current', 'locked');
+                
+                if (index < currentConceptIndex) {
+                    node.classList.add('completed');
+                } else if (index === currentConceptIndex) {
+                    node.classList.add('current');
+                } else {
+                    node.classList.add('locked');
+                }
+            });
+            
+            // 更新进度线
+            const progress = (currentConceptIndex / (concepts.length - 1)) * 100;
+            progressLineFilled.style.width = Math.min(progress, 100) + '%';
+        }
+
+        // 更新卡片内容
+        function updateCard() {
+            const concept = concepts[currentConceptIndex];
+            const cardIcon = document.querySelector('.card-icon');
+            const cardTitle = document.querySelectorAll('.card-title');
+            
+            cardIcon.textContent = concept.icon;
+            cardTitle[0].textContent = concept.name;
+            cardTitle[1].textContent = concept.name + ' - 填空练习';
+        }
+
+        // 检查答案
+        function checkAnswer() {
+            const inputs = document.querySelectorAll('.blank-input');
+            let allFilled = true;
+            
+            inputs.forEach(input => {
+                if (!input.value.trim()) {
+                    allFilled = false;
+                }
+            });
+            
+            if (!allFilled) {
+                showFeedback('请填写所有空白！', 'error');
+                return;
+            }
+            
+            // 模拟答案验证（这里总是成功）
+            showFeedback('回答正确！解锁下一个概念', 'success');
+            
+            // 延迟解锁下一个概念
+            setTimeout(() => {
+                if (currentConceptIndex < concepts.length - 1) {
+                    currentConceptIndex++;
+                    updateProgressLine();
+                    updateCard();
+                    
+                    // 清空输入框
+                    inputs.forEach(input => input.value = '');
+                    
+                    // 翻转回正面
+                    if (isCardFlipped) {
+                        flipCard();
+                    }
+                }
+            }, 1500);
+        }
+
+        // 显示反馈
+        function showFeedback(text, type) {
+            const feedback = document.getElementById('feedback');
+            const feedbackText = document.getElementById('feedbackText');
+            
+            feedbackText.textContent = text;
+            feedback.className = `feedback ${type} show`;
+            
+            setTimeout(() => {
+                feedback.classList.remove('show');
+            }, 2000);
+        }
+
+        // 触摸支持
+        let touchStartX = 0;
+        let touchStartY = 0;
+
+        document.addEventListener('touchstart', function(e) {
+            touchStartX = e.touches[0].clientX;
+            touchStartY = e.touches[0].clientY;
+        });
+
+        document.addEventListener('touchend', function(e) {
+            if (!e.target.closest('.card')) return;
+            
+            const touchEndX = e.changedTouches[0].clientX;
+            const touchEndY = e.changedTouches[0].clientY;
+            const deltaX = touchEndX - touchStartX;
+            const deltaY = touchEndY - touchStartY;
+            
+            // 如果是水平滑动且距离足够，翻转卡片
+            if (Math.abs(deltaX) > 50 && Math.abs(deltaX) > Math.abs(deltaY)) {
+                if (!e.target.closest('.blank-input') && !e.target.closest('.submit-btn')) {
+                    flipCard();
+                }
+            }
+        });
+    </script>
+</body>
+</html>
