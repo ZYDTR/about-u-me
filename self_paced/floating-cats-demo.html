@@ -13,26 +13,19 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            /* 温暖马卡龙渐变背景 */
-            background: linear-gradient(135deg, #ffeaa7 0%, #fab1a0 50%, #fd79a8 100%);
             min-height: 100vh;
             color: #333;
             overflow-x: hidden;
+        }
+
+        /* 多个小猫飘浮 */
+        .bg-floating {
+            background: linear-gradient(135deg, #ffeaa7 0%, #fab1a0 50%, #fd79a8 100%);
+            min-height: 100vh;
             position: relative;
+            overflow: hidden;
         }
 
-        /* 飘浮小猫容器 */
-        .floating-cats-container {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            z-index: 1;
-        }
-
-        /* 飘浮小猫基础样式 */
         .floating-cat {
             position: absolute;
             width: 120px;
@@ -41,136 +34,47 @@
             background-size: cover;
             border-radius: 50%;
             opacity: 0.3;
-            pointer-events: none;
         }
 
-        /* 第一只小猫 - 左上区域 */
         .floating-cat:nth-child(1) {
             top: 10%;
             left: 10%;
             animation: float1 8s ease-in-out infinite;
         }
 
-        /* 第二只小猫 - 右中区域 */
         .floating-cat:nth-child(2) {
             top: 60%;
             right: 15%;
             animation: float2 6s ease-in-out infinite;
         }
 
-        /* 第三只小猫 - 左下区域 */
         .floating-cat:nth-child(3) {
             bottom: 20%;
             left: 20%;
             animation: float3 10s ease-in-out infinite;
         }
 
-        /* 第四只小猫 - 右上区域 */
-        .floating-cat:nth-child(4) {
-            top: 20%;
-            right: 25%;
-            animation: float4 7s ease-in-out infinite;
-            opacity: 0.2;
-            width: 100px;
-            height: 100px;
-        }
-
-        /* 第五只小猫 - 中下区域 */
-        .floating-cat:nth-child(5) {
-            bottom: 30%;
-            left: 50%;
-            transform: translateX(-50%);
-            animation: float5 9s ease-in-out infinite;
-            opacity: 0.25;
-            width: 80px;
-            height: 80px;
-        }
-
-        /* 飘浮动画 - 各种不同的飘浮模式 */
         @keyframes float1 {
-            0%, 100% { 
-                transform: translateY(0px) rotate(0deg); 
-                opacity: 0.3;
-            }
-            50% { 
-                transform: translateY(-20px) rotate(10deg); 
-                opacity: 0.5;
-            }
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(10deg); }
         }
 
         @keyframes float2 {
-            0%, 100% { 
-                transform: translateY(0px) rotate(0deg); 
-                opacity: 0.3;
-            }
-            50% { 
-                transform: translateY(-30px) rotate(-10deg); 
-                opacity: 0.4;
-            }
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-30px) rotate(-10deg); }
         }
 
         @keyframes float3 {
-            0%, 100% { 
-                transform: translateY(0px) rotate(0deg); 
-                opacity: 0.3;
-            }
-            50% { 
-                transform: translateY(-15px) rotate(5deg); 
-                opacity: 0.45;
-            }
-        }
-
-        @keyframes float4 {
-            0%, 100% { 
-                transform: translateY(0px) scale(1) rotate(0deg); 
-                opacity: 0.2;
-            }
-            50% { 
-                transform: translateY(-25px) scale(1.1) rotate(-8deg); 
-                opacity: 0.35;
-            }
-        }
-
-        @keyframes float5 {
-            0%, 100% { 
-                transform: translateX(-50%) translateY(0px) rotate(0deg); 
-                opacity: 0.25;
-            }
-            50% { 
-                transform: translateX(-50%) translateY(-18px) rotate(12deg); 
-                opacity: 0.4;
-            }
-        }
-
-
-        /* 响应式设计 */
-        @media (max-width: 768px) {
-            .floating-cat {
-                width: 80px;
-                height: 80px;
-            }
-
-            .floating-cat:nth-child(4) {
-                width: 60px;
-                height: 60px;
-            }
-
-            .floating-cat:nth-child(5) {
-                width: 50px;
-                height: 50px;
-            }
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-15px) rotate(5deg); }
         }
     </style>
 </head>
 <body>
-    <!-- 飘浮小猫容器 -->
-    <div class="floating-cats-container">
-        <div class="floating-cat"></div>
-        <div class="floating-cat"></div>
+    <div class="bg-floating">
         <div class="floating-cat"></div>
         <div class="floating-cat"></div>
         <div class="floating-cat"></div>
     </div>
-
 </body>
 </html>
