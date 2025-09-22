@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSS字符小猫动画展示</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #ffeaa7 0%, #fab1a0 50%, #fd79a8 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 20px;
+            padding: 30px;
+            position: relative;
+        }
+
+        .title {
+            text-align: center;
+            font-size: 28px;
+            margin-bottom: 30px;
+            color: #d63031;
+        }
+
+        .demo-section {
+            margin-bottom: 40px;
+            padding: 20px;
+            border: 2px dashed #fab1a0;
+            border-radius: 15px;
+            background: rgba(255, 255, 255, 0.5);
+        }
+
+        .section-title {
+            font-size: 20px;
+            color: #e17055;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        .demo-item {
+            margin: 15px 0;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        /* CSS小猫动画样式 */
+        .cat {
+            display: inline-block;
+            font-family: monospace;
+            font-size: 16px;
+            line-height: 1;
+            margin: 0 5px;
+        }
+        
+        .cat-blinking {
+            animation: catBlink 4s ease-in-out infinite;
+        }
+        
+        .cat-tail {
+            animation: tailWag 2s ease-in-out infinite;
+        }
+        
+        .cat-walking {
+            animation: catWalk 3s ease-in-out infinite;
+        }
+        
+        @keyframes catWalk {
+            0%, 100% { transform: translateX(0px); }
+            50% { transform: translateX(10px); }
+        }
+        
+        @keyframes catBlink {
+            0%, 90%, 100% { opacity: 1; }
+            95% { opacity: 0.3; }
+        }
+        
+        @keyframes tailWag {
+            0%, 100% { transform: rotate(0deg); }
+            25% { transform: rotate(10deg); }
+            75% { transform: rotate(-10deg); }
+        }
+        
+        .floating-cat {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            font-family: monospace;
+            font-size: 24px;
+            color: #d63031;
+            z-index: 1000;
+            animation: float 6s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-15px); }
+        }
+        
+        .corner-cats {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            font-family: monospace;
+            font-size: 18px;
+            color: rgba(214, 48, 49, 0.8);
+            z-index: 1000;
+        }
+        
+        .walking-cat {
+            position: absolute;
+            top: 50%;
+            left: -80px;
+            font-family: monospace;
+            font-size: 20px;
+            color: #fab1a0;
+            animation: walkAcross 15s linear infinite;
+        }
+        
+        @keyframes walkAcross {
+            0% { left: -80px; }
+            100% { left: calc(100% + 80px); }
+        }
+
+        .big-demo {
+            text-align: center;
+            font-size: 30px;
+            margin: 30px 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #fff5f5, #ffeaa7);
+            border-radius: 15px;
+        }
+
+        .explanation {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 14px;
+            color: #666;
+            margin-top: 10px;
+        }
+
+        .speed-controls {
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .speed-btn {
+            padding: 8px 16px;
+            margin: 0 5px;
+            border: none;
+            background: #fd79a8;
+            color: white;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .speed-btn:hover {
+            background: #e84393;
+        }
+
+        .cat-showcase {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .cat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="title">
+            <span class="cat cat-blinking">(っ• ‸ •っ)</span>
+            CSS字符小猫动画展示
+            <span class="cat cat-tail">(•‸•)ノ゛*ﾟﾟ</span>
+        </h1>
+
+        <div class="demo-section">
+            <div class="section-title">1. 眨眼小猫动画（4秒循环）</div>
+            <div class="demo-item">
+                <span class="cat cat-blinking">(っ• ‸ •っ)</span>
+                <span>眨眼小猫</span>
+            </div>
+            <div class="demo-item">
+                <span class="cat cat-blinking">(っ• ω •っ)</span>
+                <span>另一个眨眼小猫</span>
+            </div>
+            <div class="demo-item">
+                <span class="cat cat-blinking">(°□°)ノ</span>
+                <span>惊讶眨眼小猫</span>
+            </div>
+            <div class="explanation">
+                这些小猫会每4秒眨一次眼，通过opacity变化实现眨眼效果
+            </div>
+        </div>
+
+        <div class="demo-section">
+            <div class="section-title">2. 摆尾小猫动画（2秒循环）</div>
+            <div class="demo-item">
+                <span class="cat cat-tail">~(≧▽≦)~</span>
+                <span>摆尾小猫</span>
+            </div>
+            <div class="demo-item">
+                <span class="cat cat-tail">(≧▽≦)</span>
+                <span>开心摆尾</span>
+            </div>
+            <div class="explanation">
+                小猫的尾巴会左右摆动，通过rotate变换实现摆尾效果
+            </div>
+        </div>
+
+        <div class="demo-section">
+            <div class="section-title">3. 走路小猫动画（3秒循环）</div>
+            <div class="demo-item">
+                <span class="cat cat-walking">=(°ω°)=ﾞ。。。</span>
+                <span>走路小猫</span>
+            </div>
+            <div class="demo-item">
+                <span class="cat cat-walking">(=^‥^=)</span>
+                <span>另一个走路小猫</span>
+            </div>
+            <div class="explanation">
+                小猫会左右轻微移动，模拟走路的效果
+            </div>
+        </div>
+
+        <div class="big-demo">
+            <div class="section-title">4. 组合动画展示</div>
+            <div style="font-size: 24px; margin: 20px 0;">
+                <span class="cat cat-blinking">(っ• ‸ •っ)</span>
+                学习进度
+                <span class="cat cat-tail">~(≧▽≦)~</span>
+            </div>
+            <div style="font-size: 20px; margin: 15px 0;">
+                <span class="cat cat-walking">=(°ω°)=</span>
+                查看详细课程
+            </div>
+            <div style="font-size: 20px; margin: 15px 0;">
+                <span class="cat cat-blinking">(´• ω •`)</span>
+                提交答案
+            </div>
+        </div>
+
+        <div class="cat-showcase">
+            <div class="cat-card">
+                <h3>各种小猫表情</h3>
+                <div style="font-size: 18px; line-height: 2;">
+                    <div>(っ• ‸ •っ)</div>
+                    <div>(°□°)ノ</div>
+                    <div>~(≧▽≦)~</div>
+                    <div>(´• ω •`)</div>
+                    <div>(=^‥^=)</div>
+                    <div>=(°ω°)=</div>
+                    <div>(•‸•)ノ゛*ﾟﾟ</div>
+                    <div>(≧ω≦)ノ゛。。。</div>
+                </div>
+            </div>
+            
+            <div class="cat-card">
+                <h3>动画说明</h3>
+                <div style="text-align: left; font-size: 14px;">
+                    <p><strong>眨眼：</strong>opacity: 1 → 0.3 → 1</p>
+                    <p><strong>摆尾：</strong>rotate: 0° → 10° → -10° → 0°</p>
+                    <p><strong>走路：</strong>translateX: 0px → 10px → 0px</p>
+                    <p><strong>浮动：</strong>translateY: 0px → -15px → 0px</p>
+                    <p><strong>横穿：</strong>left: -80px → 100%+80px</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="demo-section">
+            <div class="section-title">5. 性能友好设计</div>
+            <div class="explanation">
+                • 使用纯CSS动画，不依赖JavaScript<br>
+                • 动画时长设计合理，避免过于频繁<br>
+                • 使用transform和opacity变换，性能优化<br>
+                • 字符艺术比图片更轻量，加载快速
+            </div>
+        </div>
+    </div>
+
+    <!-- 浮动小猫 -->
+    <div class="floating-cat">
+        (≧ω≦)ノ゛。。。
+    </div>
+    
+    <!-- 角落小猫 -->
+    <div class="corner-cats">
+        <div class="cat cat-blinking">(っ• ‸ •っ)</div>
+    </div>
+    
+    <!-- 行走的小猫 -->
+    <div class="walking-cat">
+        =(°ω°)=ﾞ。。。
+    </div>
+
+    <script>
+        // 简单的交互演示
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('小猫动画展示页面加载完成！🐱');
+            
+            // 点击小猫可以触发一些有趣的效果
+            document.querySelectorAll('.cat').forEach(cat => {
+                cat.addEventListener('click', function() {
+                    this.style.transform = 'scale(1.2)';
+                    setTimeout(() => {
+                        this.style.transform = '';
+                    }, 200);
+                });
+            });
+        });
+    </script>
+</body>
+</html>
