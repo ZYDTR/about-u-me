@@ -508,17 +508,6 @@
             }
         ];
 
-        // 页面加载后初始化
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('页面加载完成');
-            showCard(0);
-            
-            // 确保函数在全局作用域
-            window.flipCard = flipCard;
-            window.checkCurrentAnswer = checkCurrentAnswer;
-            window.nextCard = nextCard;
-        });
-
         // 翻转卡片
         function flipCard() {
             console.log('flipCard 被调用');
@@ -601,6 +590,12 @@
                 unlockedConcepts++;
             }
         }
+
+        // 页面加载后初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('页面加载完成');
+            showCard(0);
+        });
 
         // 进度轴点击事件
         document.querySelectorAll('.progress-node').forEach((node, index) => {
