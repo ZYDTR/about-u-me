@@ -353,6 +353,13 @@
             border-radius: 25px;
             font-size: 14px;
             cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .next-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            opacity: 0.5;
         }
 
         /* 移动端优化 */
@@ -446,25 +453,17 @@
         <!-- 简单卡片显示 -->
         <div class="single-card-container">
             <div class="card" id="currentCard">
-                <div class="card-front">
+                <div class="card-front" onclick="flipCard()">
                     <h3 id="cardTitle">规则 1</h3>
                     <p id="cardContent"><strong>在你自己感觉平静、有精力的时候再看。</strong> 如果你感到疲惫或难过，请立刻关掉它。你的感受永远是第一位的。</p>
-                    <div class="btn-container">
-                        <button class="check-btn" onclick="flipCard()">翻转答题</button>
-                    </div>
-                    <div class="flip-hint" onclick="flipCard()">点击上方按钮或此处翻转</div>
+                    <div class="flip-hint">点击卡片翻转答题</div>
                 </div>
-                <div class="card-back">
+                <div class="card-back" onclick="flipCard()">
                     <h3 id="questionTitle">填空题 1</h3>
                     <p id="questionContent">在你自己感觉平静、有精力的时候再看。如果你感到疲惫或难过，请立刻关掉它。你的<input type="text" class="flip-input" data-answer="感受" placeholder="2字">永远是第一位的。</p>
                     <div class="btn-container">
-                        <button class="check-btn" onclick="checkCurrentAnswer()">检查答案</button>
-                        <button class="next-btn" id="nextBtn" style="display: none;" onclick="nextCard()">下一题</button>
+                        <button class="next-btn" id="nextBtn" style="display: none;" onclick="event.stopPropagation(); nextCard()" disabled>下一步</button>
                     </div>
-                    <div class="btn-container">
-                        <button class="next-btn" onclick="flipCard()">返回正面</button>
-                    </div>
-                    <div class="flip-hint" onclick="flipCard()">点击上方按钮或此处返回</div>
                 </div>
             </div>
         </div>
@@ -537,6 +536,18 @@
             // 重置卡片状态
             document.getElementById('currentCard').classList.remove('flipped');
             document.getElementById('nextBtn').style.display = 'none';
+            
+            // 为输入框添加事件监听器
+            setTimeout(() => {
+                const inputs = document.querySelectorAll('#questionContent .flip-input');
+                inputs.forEach(input => {
+                    input.addEventListener('input', checkCurrentAnswer);
+                    // 防止输入框点击时翻转卡片
+                    input.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                    });
+                });
+            }, 100);
         }
 
         // 检查当前卡片答案
@@ -556,8 +567,14 @@
                 }
             });
 
+            const nextBtn = document.getElementById('nextBtn');
             if (allCorrect) {
-                document.getElementById('nextBtn').style.display = 'inline-block';
+                nextBtn.style.display = 'inline-block';
+                nextBtn.disabled = false;
+                nextBtn.style.opacity = '1';
+            } else {
+                nextBtn.disabled = true;
+                nextBtn.style.opacity = '0.5';
             }
         }
 
