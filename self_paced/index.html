@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>心理学概念学习</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            min-height: 100vh;
+            color: #333;
+            overflow-x: hidden;
+            background: linear-gradient(135deg, #ffeaa7 0%, #fab1a0 50%, #fd79a8 100%);
+        }
+
+        /* 飘浮小猫背景 */
+        .floating-cat {
+            position: absolute;
+            width: 120px;
+            height: 120px;
+            background: url('cat_gif_6.gif') center center;
+            background-size: cover;
+            border-radius: 50%;
+            opacity: 0.3;
+        }
+
+        .floating-cat:nth-child(1) {
+            top: 10%;
+            left: 10%;
+            animation: float1 8s ease-in-out infinite;
+        }
+
+        .floating-cat:nth-child(2) {
+            top: 60%;
+            right: 15%;
+            animation: float2 6s ease-in-out infinite;
+        }
+
+        .floating-cat:nth-child(3) {
+            bottom: 20%;
+            left: 20%;
+            animation: float3 10s ease-in-out infinite;
+        }
+
+        /* 角落小猫 */
+        .corner-cat {
+            position: fixed;
+            width: 100px;
+            height: 100px;
+            background: url('cat_gif_6.gif') center center;
+            background-size: cover;
+            border-radius: 50%;
+            z-index: 1000;
+        }
+
+        .corner-cat.top-left {
+            top: 20px;
+            left: 20px;
+        }
+
+        .corner-cat.bottom-right {
+            bottom: 20px;
+            right: 20px;
+            animation: bounce 3s ease-in-out infinite;
+        }
+
+        /* 动画 */
+        @keyframes float1 {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(10deg); }
+        }
+
+        @keyframes float2 {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-30px) rotate(-10deg); }
+        }
+
+        @keyframes float3 {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-15px) rotate(5deg); }
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        /* 主容器 */
+        .container {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            position: relative;
+            z-index: 10;
+        }
+
+        /* 进度轴 */
+        .progress-axis {
+            display: flex;
+            align-items: center;
+            gap: 40px;
+            margin-bottom: 40px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .progress-node {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .progress-icon {
+            font-size: 48px;
+            margin-bottom: 8px;
+            filter: grayscale(100%);
+            transition: all 0.3s ease;
+        }
+
+        .progress-node.active .progress-icon,
+        .progress-node.completed .progress-icon {
+            filter: none;
+            transform: scale(1.1);
+        }
+
+        .progress-label {
+            font-size: 12px;
+            color: #666;
+            text-align: center;
+            max-width: 80px;
+        }
+
+        .progress-node.active .progress-label,
+        .progress-node.completed .progress-label {
+            color: #d63031;
+            font-weight: bold;
+        }
+
+        /* 内容卡片 */
+        .content-card {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 30px;
+            border-radius: 20px;
+            max-width: 600px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+
+        .concept-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .concept-item {
+            background: linear-gradient(135deg, #fd79a8, #e84393);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 15px;
+            cursor: pointer;
+            border: none;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: block;
+        }
+
+        .concept-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .concept-item.locked {
+            background: #ccc;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
+        /* 介绍卡片样式 */
+        .intro-title {
+            font-size: 20px;
+            color: #d63031;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .rules-list {
+            margin-bottom: 30px;
+        }
+
+        .rule-item {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 15px;
+            gap: 10px;
+        }
+
+        .rule-number {
+            color: #d63031;
+            font-weight: bold;
+            font-size: 16px;
+            min-width: 20px;
+        }
+
+        .rule-item p {
+            margin: 0;
+            line-height: 1.6;
+            font-size: 14px;
+        }
+
+        .start-btn {
+            background: linear-gradient(135deg, #fd79a8, #e84393);
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 15px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+        }
+
+        .start-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        /* 翻转卡片样式 */
+        .flip-cards-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .flip-card {
+            background: transparent;
+            width: 100%;
+            height: 250px;
+            perspective: 1000px;
+        }
+
+        .flip-card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            text-align: center;
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+            cursor: pointer;
+        }
+
+        .flip-card.flipped .flip-card-inner {
+            transform: rotateY(180deg);
+        }
+
+        .flip-card-front, .flip-card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .flip-card-back {
+            transform: rotateY(180deg);
+        }
+
+        .flip-card h3 {
+            color: #d63031;
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+
+        .flip-card p {
+            font-size: 13px;
+            line-height: 1.5;
+            margin-bottom: 10px;
+        }
+
+        .flip-hint {
+            color: #666;
+            font-size: 12px;
+            margin-top: auto;
+            font-style: italic;
+        }
+
+        .flip-input {
+            border: none;
+            border-bottom: 2px solid #ddd;
+            background: transparent;
+            padding: 2px 5px;
+            margin: 0 3px;
+            text-align: center;
+            font-size: 13px;
+            min-width: 40px;
+        }
+
+        .flip-input:focus {
+            border-bottom-color: #d63031;
+            outline: none;
+        }
+
+        .check-btn {
+            background: linear-gradient(135deg, #fd79a8, #e84393);
+            color: white;
+            padding: 8px 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 12px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        .complete-btn {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 15px;
+            font-size: 16px;
+            cursor: pointer;
+            width: 100%;
+            grid-column: 1 / -1;
+        }
+
+        /* 移动端优化 */
+        @media (max-width: 768px) {
+            .flip-cards-container {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+            
+            .flip-card {
+                height: 200px;
+            }
+            
+            .flip-card-front, .flip-card-back {
+                padding: 15px;
+            }
+            
+            .flip-card h3 {
+                font-size: 14px;
+            }
+            
+            .flip-card p {
+                font-size: 12px;
+            }
+            
+            .flip-input {
+                font-size: 12px;
+                min-width: 35px;
+            }
+        }
+
+        /* 响应式 */
+        @media (max-width: 768px) {
+            .progress-axis {
+                gap: 20px;
+            }
+            
+            .progress-icon {
+                font-size: 36px;
+            }
+            
+            .container {
+                padding: 15px;
+            }
+            
+            .content-card {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 飘浮小猫 -->
+    <div class="floating-cat"></div>
+    <div class="floating-cat"></div>
+    <div class="floating-cat"></div>
+    
+    <!-- 角落小猫 -->
+    <div class="corner-cat top-left"></div>
+    <div class="corner-cat bottom-right"></div>
+
+    <div class="container">
+        <!-- 进度轴 -->
+        <div class="progress-axis">
+            <div class="progress-node active" data-concept="darvo">
+                <div class="progress-icon">🐾</div>
+                <div class="progress-label">DARVO</div>
+            </div>
+            <div class="progress-node" data-concept="love-bombing">
+                <div class="progress-icon">🐾</div>
+                <div class="progress-label">Love Bombing</div>
+            </div>
+            <div class="progress-node" data-concept="gaslighting">
+                <div class="progress-icon">🐾</div>
+                <div class="progress-label">煤气灯效应</div>
+            </div>
+            <div class="progress-node" data-concept="learned-helplessness">
+                <div class="progress-icon">🐾</div>
+                <div class="progress-label">习得性失助</div>
+            </div>
+            <div class="progress-node" data-concept="traumatic-bonding">
+                <div class="progress-icon">🐾</div>
+                <div class="progress-label">创伤性结合</div>
+            </div>
+        </div>
+
+        <!-- 介绍卡片 -->
+        <div class="intro-card content-card" id="introCard">
+            <h2 class="intro-title">使用前须知</h2>
+            <div class="rules-list">
+                <div class="rule-item">
+                    <span class="rule-number">1.</span>
+                    <p><strong>在你自己感觉平静、有精力的时候再看。</strong> 如果你感到疲惫或难过，请立刻关掉它。你的感受永远是第一位的。</p>
+                </div>
+                <div class="rule-item">
+                    <span class="rule-number">2.</span>
+                    <p><strong>这面镜子只照向他，不照向你。</strong> 这些词条是用来理解他的行为模式的，不是用来反思"我是不是哪里做得不够好"。你在那段关系里的所有反应，都是一个正常人在不正常环境下的正常反应。</p>
+                </div>
+                <div class="rule-item">
+                    <span class="rule-number">3.</span>
+                    <p><strong>看到有共鸣的地方，请相信你的直觉。</strong> 如果某个词让你感觉"啊，就是这个！"，请相信那种感觉。那是你的内心在告诉你真相。</p>
+                </div>
+                <div class="rule-item">
+                    <span class="rule-number">4.</span>
+                    <p><strong>不需要全部理解，也不需要记住。</strong> 只是一个参考。看完后有什么感受、想法、困惑，无论多小，都可以在你觉得舒服的时候，随时告诉我。我们可以一起讨论。</p>
+                </div>
+            </div>
+            <button class="start-btn" onclick="startQuiz()">开始答题</button>
+        </div>
+
+        <!-- 翻转卡片区域 -->
+        <div class="flip-cards-container" id="flipCards" style="display: none;">
+            <div class="flip-card" data-rule="1">
+                <div class="flip-card-inner">
+                    <div class="flip-card-front">
+                        <h3>规则 1</h3>
+                        <p><strong>在你自己感觉平静、有精力的时候再看。</strong> 如果你感到疲惫或难过，请立刻关掉它。你的感受永远是第一位的。</p>
+                        <div class="flip-hint">点击翻转答题</div>
+                    </div>
+                    <div class="flip-card-back">
+                        <h3>填空题 1</h3>
+                        <p>在你自己感觉平静、有精力的时候再看。如果你感到疲惫或难过，请立刻关掉它。你的<input type="text" class="flip-input" data-answer="感受" placeholder="2字">永远是第一位的。</p>
+                        <button class="check-btn" onclick="checkAnswer(1)">检查答案</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flip-card" data-rule="2">
+                <div class="flip-card-inner">
+                    <div class="flip-card-front">
+                        <h3>规则 2</h3>
+                        <p><strong>这面镜子只照向他，不照向你。</strong> 这些词条是用来理解他的行为模式的，不是用来反思"我是不是哪里做得不够好"。你在那段关系里的所有反应，都是一个正常人在不正常环境下的正常反应。</p>
+                        <div class="flip-hint">点击翻转答题</div>
+                    </div>
+                    <div class="flip-card-back">
+                        <h3>填空题 2</h3>
+                        <p>这面镜子只照向<input type="text" class="flip-input" data-answer="他" placeholder="1字">，不照向你。这些词条是用来理解他的行为模式的，<input type="text" class="flip-input" data-answer="不是" placeholder="2字">用来反思"我是不是哪里做得不够好"。你在那段关系里的所有反应，都是一个<input type="text" class="flip-input" data-answer="正常" placeholder="2字">人在<input type="text" class="flip-input" data-answer="不正常" placeholder="3字">环境下的<input type="text" class="flip-input" data-answer="正常" placeholder="2字">反应。</p>
+                        <button class="check-btn" onclick="checkAnswer(2)">检查答案</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flip-card" data-rule="3">
+                <div class="flip-card-inner">
+                    <div class="flip-card-front">
+                        <h3>规则 3</h3>
+                        <p><strong>看到有共鸣的地方，请相信你的直觉。</strong> 如果某个词让你感觉"啊，就是这个！"，请相信那种感觉。那是你的内心在告诉你真相。</p>
+                        <div class="flip-hint">点击翻转答题</div>
+                    </div>
+                    <div class="flip-card-back">
+                        <h3>填空题 3</h3>
+                        <p>看到有共鸣的地方，请相信你的直觉。如果某个词让你感觉"啊，就是这个！"，请相信那种<input type="text" class="flip-input" data-answer="感觉" placeholder="2字">。那是你的内心在告诉你真相。</p>
+                        <button class="check-btn" onclick="checkAnswer(3)">检查答案</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flip-card" data-rule="4">
+                <div class="flip-card-inner">
+                    <div class="flip-card-front">
+                        <h3>规则 4</h3>
+                        <p><strong>不需要全部理解，也不需要记住。</strong> 只是一个参考。看完后有什么感受、想法、困惑，无论多小，都可以在你觉得舒服的时候，随时告诉我。我们可以一起讨论。</p>
+                        <div class="flip-hint">点击翻转答题</div>
+                    </div>
+                    <div class="flip-card-back">
+                        <h3>填空题 4</h3>
+                        <p>不需要全部理解，也不需要记住。只是一个参考。看完后有什么感受、想法、困惑，无论多小，都可以在你觉得舒服的时候，随时告诉我。<input type="text" class="flip-input" data-answer="我们" placeholder="2字">可以一起讨论。</p>
+                        <button class="check-btn" onclick="checkAnswer(4)">检查答案</button>
+                    </div>
+                </div>
+            </div>
+            
+            <button class="complete-btn" id="completeBtn" style="display: none;" onclick="completeQuiz()">完成所有题目</button>
+        </div>
+
+        <!-- 概念列表 - 初始隐藏 -->
+        <div class="content-card" id="conceptList" style="display: none;">
+            <div class="concept-list">
+                <a href="darvo.html" class="concept-item locked" data-concept="darvo">DARVO</a>
+                <a href="love-bombing.html" class="concept-item locked" data-concept="love-bombing">Love Bombing</a>
+                <a href="gaslighting.html" class="concept-item locked" data-concept="gaslighting">煤气灯效应</a>
+                <a href="learned-helplessness.html" class="concept-item locked" data-concept="learned-helplessness">习得性失助</a>
+                <a href="traumatic-bonding.html" class="concept-item locked" data-concept="traumatic-bonding">创伤性结合</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let completedCards = new Set();
+        let unlockedConcepts = 0;
+
+        // 开始答题
+        function startQuiz() {
+            document.getElementById('introCard').style.display = 'none';
+            document.getElementById('flipCards').style.display = 'block';
+        }
+
+        // 翻转卡片
+        document.addEventListener('DOMContentLoaded', function() {
+            const flipCards = document.querySelectorAll('.flip-card');
+            flipCards.forEach(card => {
+                card.addEventListener('click', function() {
+                    this.classList.toggle('flipped');
+                });
+            });
+        });
+
+        // 检查单个卡片答案
+        function checkAnswer(cardNumber) {
+            const card = document.querySelector(`[data-rule="${cardNumber}"]`);
+            const inputs = card.querySelectorAll('.flip-input');
+            let allCorrect = true;
+
+            inputs.forEach(input => {
+                const userAnswer = input.value.trim();
+                const correctAnswer = input.dataset.answer;
+                
+                if (userAnswer === correctAnswer) {
+                    input.style.borderBottomColor = '#4CAF50';
+                } else {
+                    input.style.borderBottomColor = '#f44336';
+                    allCorrect = false;
+                }
+            });
+
+            if (allCorrect) {
+                completedCards.add(cardNumber);
+                card.style.opacity = '0.7';
+                card.style.pointerEvents = 'none';
+                
+                // 检查是否所有卡片都完成
+                if (completedCards.size === 4) {
+                    document.getElementById('completeBtn').style.display = 'block';
+                }
+            }
+        }
+
+        // 完成所有题目
+        function completeQuiz() {
+            document.getElementById('flipCards').style.display = 'none';
+            document.getElementById('conceptList').style.display = 'block';
+            
+            // 解锁第一个概念
+            unlockNextConcept();
+        }
+
+        // 解锁下一个概念
+        function unlockNextConcept() {
+            const concepts = document.querySelectorAll('.concept-item');
+            if (unlockedConcepts < concepts.length) {
+                concepts[unlockedConcepts].classList.remove('locked');
+                
+                // 更新进度轴
+                const progressNodes = document.querySelectorAll('.progress-node');
+                if (unlockedConcepts < progressNodes.length) {
+                    progressNodes[unlockedConcepts].classList.add('completed');
+                }
+                
+                unlockedConcepts++;
+            }
+        }
+
+        // 进度轴点击事件
+        document.querySelectorAll('.progress-node').forEach((node, index) => {
+            node.addEventListener('click', function() {
+                if (index < unlockedConcepts) {
+                    const concept = this.dataset.concept;
+                    const conceptFiles = {
+                        'darvo': 'darvo.html',
+                        'love-bombing': 'love-bombing.html',
+                        'gaslighting': 'gaslighting.html',
+                        'learned-helplessness': 'learned-helplessness.html',
+                        'traumatic-bonding': 'traumatic-bonding.html'
+                    };
+                    
+                    if (conceptFiles[concept]) {
+                        window.location.href = conceptFiles[concept];
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>
