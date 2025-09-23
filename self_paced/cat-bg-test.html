@@ -69,6 +69,32 @@
             50% { transform: translateY(-15px) rotate(5deg); }
         }
 
+        .corner-cat {
+            position: fixed;
+            width: 100px;
+            height: 100px;
+            background: url('cat_gif_6.gif') center center;
+            background-size: cover;
+            border-radius: 50%;
+            z-index: 1000;
+        }
+
+        .corner-cat.top-left {
+            top: 20px;
+            left: 20px;
+        }
+
+        .corner-cat.bottom-right {
+            bottom: 20px;
+            right: 20px;
+            animation: bounce 3s ease-in-out infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
         /* 内容容器 */
         .section {
             margin-bottom: 50px;
@@ -108,6 +134,8 @@
         <div class="floating-cat"></div>
         <div class="floating-cat"></div>
         <div class="floating-cat"></div>
+        <div class="corner-cat top-left"></div>
+        <div class="corner-cat bottom-right"></div>
         
         <div class="demo-card">
             <h1 class="title">方案3：飘浮小猫</h1>
