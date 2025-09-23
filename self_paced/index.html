@@ -238,78 +238,63 @@
             box-shadow: 0 5px 15px rgba(0,0,0,0.2);
         }
 
-        /* 单张卡片容器 */
+        /* 简单的卡片容器 */
         .single-card-container {
-            display: flex;
-            justify-content: center;
-            margin-bottom: 30px;
-        }
-
-        .flip-card {
-            background: transparent;
-            width: 85%;
-            height: 250px;
-            perspective: 1000px;
-            max-width: 480px;
-            margin: 0 auto;
-        }
-
-        .flip-card-inner {
-            position: relative;
             width: 100%;
-            height: 100%;
-            text-align: center;
-            transition: transform 0.6s;
-            transform-style: preserve-3d;
-            cursor: pointer;
+            max-width: 500px;
+            margin: 0 auto 30px;
+            padding: 0 20px;
         }
 
-        .flip-card.flipped .flip-card-inner {
-            transform: rotateY(180deg);
-        }
-
-        .flip-card-front, .flip-card-back {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            backface-visibility: hidden;
+        .card {
             background: rgba(255, 255, 255, 0.95);
             border-radius: 15px;
-            padding: 20px;
+            padding: 30px;
             box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            box-sizing: border-box;
-            word-wrap: break-word;
-            white-space: normal;
+            margin-bottom: 20px;
+            min-height: 200px;
         }
 
-        .flip-card-back {
-            transform: rotateY(180deg);
+        .card.hidden {
+            display: none;
         }
 
-        .flip-card h3 {
+        .card h3 {
             color: #d63031;
-            margin-bottom: 15px;
-            font-size: 18px;
+            font-size: 20px;
+            margin-bottom: 20px;
             text-align: center;
-            font-weight: bold;
         }
 
-        .flip-card p {
-            font-size: 14px;
-            line-height: 1.5;
-            margin-bottom: 15px;
-            text-align: left;
-            word-break: normal;
-            overflow-wrap: break-word;
+        .card p {
+            font-size: 15px;
+            line-height: 1.6;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .card-front {
+            display: block;
+        }
+
+        .card-back {
+            display: none;
+        }
+
+        .card.flipped .card-front {
+            display: none;
+        }
+
+        .card.flipped .card-back {
+            display: block;
         }
 
         .flip-hint {
-            color: #666;
-            font-size: 12px;
-            margin-top: auto;
+            color: #999;
+            font-size: 14px;
+            text-align: center;
+            margin-top: 20px;
+            cursor: pointer;
             font-style: italic;
         }
 
@@ -317,11 +302,12 @@
             border: none;
             border-bottom: 2px solid #ddd;
             background: transparent;
-            padding: 2px 5px;
-            margin: 0 3px;
+            padding: 4px 8px;
+            margin: 0 5px;
             text-align: center;
-            font-size: 13px;
-            min-width: 40px;
+            font-size: 15px;
+            min-width: 50px;
+            font-family: inherit;
         }
 
         .flip-input:focus {
@@ -329,59 +315,62 @@
             outline: none;
         }
 
+        .btn-container {
+            text-align: center;
+            margin-top: 25px;
+        }
+
         .check-btn {
             background: linear-gradient(135deg, #fd79a8, #e84393);
             color: white;
-            padding: 8px 15px;
+            padding: 12px 25px;
             border: none;
-            border-radius: 10px;
-            font-size: 12px;
+            border-radius: 25px;
+            font-size: 14px;
             cursor: pointer;
-            margin-top: 10px;
+            margin-right: 10px;
         }
 
         .next-btn {
             background: linear-gradient(135deg, #4CAF50, #45a049);
             color: white;
-            padding: 8px 15px;
+            padding: 12px 25px;
             border: none;
-            border-radius: 10px;
-            font-size: 12px;
+            border-radius: 25px;
+            font-size: 14px;
             cursor: pointer;
-            margin-top: 10px;
-            margin-left: 10px;
         }
 
         /* 移动端优化 */
         @media (max-width: 768px) {
             .single-card-container {
-                padding: 0 20px;
+                padding: 0 15px;
             }
             
-            .flip-card {
-                width: 100%;
-                height: 220px;
-                max-width: 400px;
+            .card {
+                padding: 20px;
+                min-height: 180px;
             }
             
-            .flip-card-front, .flip-card-back {
-                padding: 15px;
+            .card h3 {
+                font-size: 18px;
+                margin-bottom: 15px;
             }
             
-            .flip-card h3 {
-                font-size: 16px;
-                margin-bottom: 10px;
-            }
-            
-            .flip-card p {
-                font-size: 13px;
-                line-height: 1.4;
+            .card p {
+                font-size: 14px;
+                line-height: 1.5;
             }
             
             .flip-input {
+                font-size: 14px;
+                min-width: 45px;
+                padding: 3px 6px;
+            }
+            
+            .check-btn, .next-btn {
+                padding: 10px 20px;
                 font-size: 13px;
-                min-width: 35px;
-                padding: 2px 4px;
             }
         }
 
@@ -440,21 +429,22 @@
             </div>
         </div>
 
-        <!-- 单张卡片显示 -->
-        <div class="single-card-container" id="singleCard">
-            <div class="flip-card" id="currentCard">
-                <div class="flip-card-inner">
-                    <div class="flip-card-front">
-                        <h3 id="cardTitle">规则 1</h3>
-                        <p id="cardContent"><strong>在你自己感觉平静、有精力的时候再看。</strong> 如果你感到疲惫或难过，请立刻关掉它。你的感受永远是第一位的。</p>
-                        <div class="flip-hint">点击翻转答题</div>
-                    </div>
-                    <div class="flip-card-back">
-                        <h3 id="questionTitle">填空题 1</h3>
-                        <p id="questionContent">在你自己感觉平静、有精力的时候再看。如果你感到疲惫或难过，请立刻关掉它。你的<input type="text" class="flip-input" data-answer="感受" placeholder="2字">永远是第一位的。</p>
+        <!-- 简单卡片显示 -->
+        <div class="single-card-container">
+            <div class="card" id="currentCard">
+                <div class="card-front">
+                    <h3 id="cardTitle">规则 1</h3>
+                    <p id="cardContent"><strong>在你自己感觉平静、有精力的时候再看。</strong> 如果你感到疲惫或难过，请立刻关掉它。你的感受永远是第一位的。</p>
+                    <div class="flip-hint" onclick="flipCard()">点击翻转答题</div>
+                </div>
+                <div class="card-back">
+                    <h3 id="questionTitle">填空题 1</h3>
+                    <p id="questionContent">在你自己感觉平静、有精力的时候再看。如果你感到疲惫或难过，请立刻关掉它。你的<input type="text" class="flip-input" data-answer="感受" placeholder="2字">永远是第一位的。</p>
+                    <div class="btn-container">
                         <button class="check-btn" onclick="checkCurrentAnswer()">检查答案</button>
                         <button class="next-btn" id="nextBtn" style="display: none;" onclick="nextCard()">下一题</button>
                     </div>
+                    <div class="flip-hint" onclick="flipCard()">点击返回正面</div>
                 </div>
             </div>
         </div>
@@ -501,12 +491,13 @@
         // 页面加载后初始化
         document.addEventListener('DOMContentLoaded', function() {
             showCard(0);
-            
-            // 添加翻转事件
-            document.getElementById('currentCard').addEventListener('click', function() {
-                this.classList.toggle('flipped');
-            });
         });
+
+        // 翻转卡片
+        function flipCard() {
+            const card = document.getElementById('currentCard');
+            card.classList.toggle('flipped');
+        }
 
         // 显示指定卡片
         function showCard(index) {
@@ -551,7 +542,7 @@
                 showCard(currentCardIndex);
             } else {
                 // 所有卡片完成，显示概念列表
-                document.getElementById('singleCard').style.display = 'none';
+                document.querySelector('.single-card-container').style.display = 'none';
                 document.getElementById('conceptList').style.display = 'block';
                 unlockNextConcept();
             }
