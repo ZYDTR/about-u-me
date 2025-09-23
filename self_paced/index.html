@@ -238,10 +238,11 @@
             box-shadow: 0 5px 15px rgba(0,0,0,0.2);
         }
 
-        /* 单张卡片容器 */
-        .single-card-container {
+        /* 4张卡片容器 */
+        .cards-container {
             display: flex;
-            justify-content: center;
+            flex-direction: column;
+            gap: 20px;
             margin-bottom: 30px;
         }
 
@@ -332,16 +333,13 @@
             margin-top: 10px;
         }
 
-        .next-card-btn {
-            background: linear-gradient(135deg, #4CAF50, #45a049);
-            color: white;
-            padding: 8px 15px;
-            border: none;
-            border-radius: 10px;
-            font-size: 12px;
-            cursor: pointer;
-            margin-top: 10px;
-            margin-left: 10px;
+        .flip-card.disabled {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+
+        .flip-card.disabled .flip-hint {
+            color: #999;
         }
 
         /* 移动端优化 */
@@ -425,44 +423,68 @@
             </div>
         </div>
 
-        <!-- 介绍卡片 -->
-        <div class="intro-card content-card" id="introCard">
-            <h2 class="intro-title">使用前须知</h2>
-            <div class="rules-list">
-                <div class="rule-item">
-                    <span class="rule-number">1.</span>
-                    <p><strong>在你自己感觉平静、有精力的时候再看。</strong> 如果你感到疲惫或难过，请立刻关掉它。你的感受永远是第一位的。</p>
-                </div>
-                <div class="rule-item">
-                    <span class="rule-number">2.</span>
-                    <p><strong>这面镜子只照向他，不照向你。</strong> 这些词条是用来理解他的行为模式的，不是用来反思"我是不是哪里做得不够好"。你在那段关系里的所有反应，都是一个正常人在不正常环境下的正常反应。</p>
-                </div>
-                <div class="rule-item">
-                    <span class="rule-number">3.</span>
-                    <p><strong>看到有共鸣的地方，请相信你的直觉。</strong> 如果某个词让你感觉"啊，就是这个！"，请相信那种感觉。那是你的内心在告诉你真相。</p>
-                </div>
-                <div class="rule-item">
-                    <span class="rule-number">4.</span>
-                    <p><strong>不需要全部理解，也不需要记住。</strong> 只是一个参考。看完后有什么感受、想法、困惑，无论多小，都可以在你觉得舒服的时候，随时告诉我。我们可以一起讨论。</p>
-                </div>
-            </div>
-            <button class="start-btn" onclick="startQuiz()">开始答题</button>
-        </div>
-
-        <!-- 单张卡片显示区域 -->
-        <div class="single-card-container" id="singleCard" style="display: none;">
-            <div class="flip-card" id="currentCard">
+        <!-- 4张卡片区域 -->
+        <div class="cards-container" id="cardsContainer">
+            <!-- 卡片1 -->
+            <div class="flip-card" id="card1" data-card="1">
                 <div class="flip-card-inner">
                     <div class="flip-card-front">
-                        <h3 id="cardTitle">规则 1</h3>
-                        <p id="cardContent"><strong>在你自己感觉平静、有精力的时候再看。</strong> 如果你感到疲惫或难过，请立刻关掉它。你的感受永远是第一位的。</p>
+                        <h3>规则 1</h3>
+                        <p><strong>在你自己感觉平静、有精力的时候再看。</strong> 如果你感到疲惫或难过，请立刻关掉它。你的感受永远是第一位的。</p>
                         <div class="flip-hint">点击翻转答题</div>
                     </div>
                     <div class="flip-card-back">
-                        <h3 id="questionTitle">填空题 1</h3>
-                        <p id="questionContent">在你自己感觉平静、有精力的时候再看。如果你感到疲惫或难过，请立刻关掉它。你的<input type="text" class="flip-input" data-answer="感受" placeholder="2字">永远是第一位的。</p>
-                        <button class="check-btn" onclick="checkCurrentAnswer()">检查答案</button>
-                        <button class="next-card-btn" id="nextCardBtn" style="display: none;" onclick="nextCard()">下一题</button>
+                        <h3>填空题 1</h3>
+                        <p>在你自己感觉平静、有精力的时候再看。如果你感到疲惫或难过，请立刻关掉它。你的<input type="text" class="flip-input" data-answer="感受" placeholder="2字">永远是第一位的。</p>
+                        <button class="check-btn" onclick="checkAnswer(1)">检查答案</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 卡片2 -->
+            <div class="flip-card disabled" id="card2" data-card="2">
+                <div class="flip-card-inner">
+                    <div class="flip-card-front">
+                        <h3>规则 2</h3>
+                        <p><strong>这面镜子只照向他，不照向你。</strong> 这些词条是用来理解他的行为模式的，不是用来反思"我是不是哪里做得不够好"。你在那段关系里的所有反应，都是一个正常人在不正常环境下的正常反应。</p>
+                        <div class="flip-hint">完成上一题后解锁</div>
+                    </div>
+                    <div class="flip-card-back">
+                        <h3>填空题 2</h3>
+                        <p>这面镜子只照向<input type="text" class="flip-input" data-answer="他" placeholder="1字">，不照向你。这些词条是用来理解他的行为模式的，<input type="text" class="flip-input" data-answer="不是" placeholder="2字">用来反思"我是不是哪里做得不够好"。你在那段关系里的所有反应，都是一个<input type="text" class="flip-input" data-answer="正常" placeholder="2字">人在<input type="text" class="flip-input" data-answer="不正常" placeholder="3字">环境下的<input type="text" class="flip-input" data-answer="正常" placeholder="2字">反应。</p>
+                        <button class="check-btn" onclick="checkAnswer(2)">检查答案</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 卡片3 -->
+            <div class="flip-card disabled" id="card3" data-card="3">
+                <div class="flip-card-inner">
+                    <div class="flip-card-front">
+                        <h3>规则 3</h3>
+                        <p><strong>看到有共鸣的地方，请相信你的直觉。</strong> 如果某个词让你感觉"啊，就是这个！"，请相信那种感觉。那是你的内心在告诉你真相。</p>
+                        <div class="flip-hint">完成上一题后解锁</div>
+                    </div>
+                    <div class="flip-card-back">
+                        <h3>填空题 3</h3>
+                        <p>看到有共鸣的地方，请相信你的直觉。如果某个词让你感觉"啊，就是这个！"，请相信那种<input type="text" class="flip-input" data-answer="感觉" placeholder="2字">。那是你的内心在告诉你真相。</p>
+                        <button class="check-btn" onclick="checkAnswer(3)">检查答案</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 卡片4 -->
+            <div class="flip-card disabled" id="card4" data-card="4">
+                <div class="flip-card-inner">
+                    <div class="flip-card-front">
+                        <h3>规则 4</h3>
+                        <p><strong>不需要全部理解，也不需要记住。</strong> 只是一个参考。看完后有什么感受、想法、困惑，无论多小，都可以在你觉得舒服的时候，随时告诉我。我们可以一起讨论。</p>
+                        <div class="flip-hint">完成上一题后解锁</div>
+                    </div>
+                    <div class="flip-card-back">
+                        <h3>填空题 4</h3>
+                        <p>不需要全部理解，也不需要记住。只是一个参考。看完后有什么感受、想法、困惑，无论多小，都可以在你觉得舒服的时候，随时告诉我。<input type="text" class="flip-input" data-answer="我们" placeholder="2字">可以一起讨论。</p>
+                        <button class="check-btn" onclick="checkAnswer(4)">检查答案</button>
                     </div>
                 </div>
             </div>
@@ -481,62 +503,25 @@
     </div>
 
     <script>
-        let currentCardIndex = 0;
+        let completedCards = new Set();
         let unlockedConcepts = 0;
-        
-        const cardData = [
-            {
-                title: "规则 1",
-                content: "<strong>在你自己感觉平静、有精力的时候再看。</strong> 如果你感到疲惫或难过，请立刻关掉它。你的感受永远是第一位的。",
-                question: "在你自己感觉平静、有精力的时候再看。如果你感到疲惫或难过，请立刻关掉它。你的<input type=\"text\" class=\"flip-input\" data-answer=\"感受\" placeholder=\"2字\">永远是第一位的。"
-            },
-            {
-                title: "规则 2", 
-                content: "<strong>这面镜子只照向他，不照向你。</strong> 这些词条是用来理解他的行为模式的，不是用来反思"我是不是哪里做得不够好"。你在那段关系里的所有反应，都是一个正常人在不正常环境下的正常反应。",
-                question: "这面镜子只照向<input type=\"text\" class=\"flip-input\" data-answer=\"他\" placeholder=\"1字\">，不照向你。这些词条是用来理解他的行为模式的，<input type=\"text\" class=\"flip-input\" data-answer=\"不是\" placeholder=\"2字\">用来反思"我是不是哪里做得不够好"。你在那段关系里的所有反应，都是一个<input type=\"text\" class=\"flip-input\" data-answer=\"正常\" placeholder=\"2字\">人在<input type=\"text\" class=\"flip-input\" data-answer=\"不正常\" placeholder=\"3字\">环境下的<input type=\"text\" class=\"flip-input\" data-answer=\"正常\" placeholder=\"2字\">反应。"
-            },
-            {
-                title: "规则 3",
-                content: "<strong>看到有共鸣的地方，请相信你的直觉。</strong> 如果某个词让你感觉"啊，就是这个！"，请相信那种感觉。那是你的内心在告诉你真相。",
-                question: "看到有共鸣的地方，请相信你的直觉。如果某个词让你感觉"啊，就是这个！"，请相信那种<input type=\"text\" class=\"flip-input\" data-answer=\"感觉\" placeholder=\"2字\">。那是你的内心在告诉你真相。"
-            },
-            {
-                title: "规则 4",
-                content: "<strong>不需要全部理解，也不需要记住。</strong> 只是一个参考。看完后有什么感受、想法、困惑，无论多小，都可以在你觉得舒服的时候，随时告诉我。我们可以一起讨论。",
-                question: "不需要全部理解，也不需要记住。只是一个参考。看完后有什么感受、想法、困惑，无论多小，都可以在你觉得舒服的时候，随时告诉我。<input type=\"text\" class=\"flip-input\" data-answer=\"我们\" placeholder=\"2字\">可以一起讨论。"
-            }
-        ];
 
-        // 开始答题
-        function startQuiz() {
-            document.getElementById('introCard').style.display = 'none';
-            document.getElementById('singleCard').style.display = 'block';
-            showCard(0);
-        }
-
-        // 显示指定卡片
-        function showCard(index) {
-            const card = cardData[index];
-            document.getElementById('cardTitle').textContent = card.title;
-            document.getElementById('cardContent').innerHTML = card.content;
-            document.getElementById('questionTitle').textContent = `填空题 ${index + 1}`;
-            document.getElementById('questionContent').innerHTML = card.question;
-            
-            // 重置卡片状态
-            document.getElementById('currentCard').classList.remove('flipped');
-            document.getElementById('nextCardBtn').style.display = 'none';
-        }
-
-        // 翻转卡片
+        // 页面加载后设置卡片点击事件
         document.addEventListener('DOMContentLoaded', function() {
-            document.getElementById('currentCard').addEventListener('click', function() {
-                this.classList.toggle('flipped');
+            const flipCards = document.querySelectorAll('.flip-card:not(.disabled)');
+            flipCards.forEach(card => {
+                card.addEventListener('click', function() {
+                    if (!this.classList.contains('disabled')) {
+                        this.classList.toggle('flipped');
+                    }
+                });
             });
         });
 
-        // 检查当前卡片答案
-        function checkCurrentAnswer() {
-            const inputs = document.querySelectorAll('#questionContent .flip-input');
+        // 检查单个卡片答案
+        function checkAnswer(cardNumber) {
+            const card = document.getElementById(`card${cardNumber}`);
+            const inputs = card.querySelectorAll('.flip-input');
             let allCorrect = true;
 
             inputs.forEach(input => {
@@ -552,21 +537,30 @@
             });
 
             if (allCorrect) {
-                document.getElementById('nextCardBtn').style.display = 'inline-block';
-            }
-        }
-
-        // 下一张卡片
-        function nextCard() {
-            currentCardIndex++;
-            
-            if (currentCardIndex < cardData.length) {
-                showCard(currentCardIndex);
-            } else {
-                // 所有卡片完成，显示概念列表
-                document.getElementById('singleCard').style.display = 'none';
-                document.getElementById('conceptList').style.display = 'block';
-                unlockNextConcept();
+                completedCards.add(cardNumber);
+                card.style.opacity = '0.7';
+                card.style.pointerEvents = 'none';
+                
+                // 解锁下一张卡片
+                const nextCard = document.getElementById(`card${cardNumber + 1}`);
+                if (nextCard) {
+                    nextCard.classList.remove('disabled');
+                    nextCard.querySelector('.flip-hint').textContent = '点击翻转答题';
+                    
+                    // 添加点击事件
+                    nextCard.addEventListener('click', function() {
+                        this.classList.toggle('flipped');
+                    });
+                }
+                
+                // 检查是否所有卡片都完成
+                if (completedCards.size === 4) {
+                    setTimeout(() => {
+                        document.getElementById('cardsContainer').style.display = 'none';
+                        document.getElementById('conceptList').style.display = 'block';
+                        unlockNextConcept();
+                    }, 1000);
+                }
             }
         }
 
