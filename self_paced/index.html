@@ -289,6 +289,11 @@
             display: block;
         }
 
+        .card.flipped {
+            background: rgba(255, 245, 245, 0.95);
+            border: 2px solid #d63031;
+        }
+
         .flip-hint {
             color: #999;
             font-size: 14px;
@@ -505,7 +510,13 @@
 
         // 页面加载后初始化
         document.addEventListener('DOMContentLoaded', function() {
+            console.log('页面加载完成');
             showCard(0);
+            
+            // 确保函数在全局作用域
+            window.flipCard = flipCard;
+            window.checkCurrentAnswer = checkCurrentAnswer;
+            window.nextCard = nextCard;
         });
 
         // 翻转卡片
@@ -514,7 +525,15 @@
             const card = document.getElementById('currentCard');
             console.log('当前卡片:', card);
             console.log('翻转前class:', card.className);
-            card.classList.toggle('flipped');
+            
+            if (card.classList.contains('flipped')) {
+                card.classList.remove('flipped');
+                console.log('移除flipped类');
+            } else {
+                card.classList.add('flipped');
+                console.log('添加flipped类');
+            }
+            
             console.log('翻转后class:', card.className);
         }
 
