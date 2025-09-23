@@ -296,6 +296,15 @@
             margin-top: 20px;
             cursor: pointer;
             font-style: italic;
+            padding: 10px;
+            border: 1px dashed #ccc;
+            border-radius: 5px;
+            background: rgba(0,0,0,0.05);
+        }
+
+        .flip-hint:hover {
+            background: rgba(0,0,0,0.1);
+            color: #666;
         }
 
         .flip-input {
@@ -435,7 +444,10 @@
                 <div class="card-front">
                     <h3 id="cardTitle">规则 1</h3>
                     <p id="cardContent"><strong>在你自己感觉平静、有精力的时候再看。</strong> 如果你感到疲惫或难过，请立刻关掉它。你的感受永远是第一位的。</p>
-                    <div class="flip-hint" onclick="flipCard()">点击翻转答题</div>
+                    <div class="btn-container">
+                        <button class="check-btn" onclick="flipCard()">翻转答题</button>
+                    </div>
+                    <div class="flip-hint" onclick="flipCard()">点击上方按钮或此处翻转</div>
                 </div>
                 <div class="card-back">
                     <h3 id="questionTitle">填空题 1</h3>
@@ -444,7 +456,10 @@
                         <button class="check-btn" onclick="checkCurrentAnswer()">检查答案</button>
                         <button class="next-btn" id="nextBtn" style="display: none;" onclick="nextCard()">下一题</button>
                     </div>
-                    <div class="flip-hint" onclick="flipCard()">点击返回正面</div>
+                    <div class="btn-container">
+                        <button class="next-btn" onclick="flipCard()">返回正面</button>
+                    </div>
+                    <div class="flip-hint" onclick="flipCard()">点击上方按钮或此处返回</div>
                 </div>
             </div>
         </div>
@@ -495,8 +510,12 @@
 
         // 翻转卡片
         function flipCard() {
+            console.log('flipCard 被调用');
             const card = document.getElementById('currentCard');
+            console.log('当前卡片:', card);
+            console.log('翻转前class:', card.className);
             card.classList.toggle('flipped');
+            console.log('翻转后class:', card.className);
         }
 
         // 显示指定卡片
